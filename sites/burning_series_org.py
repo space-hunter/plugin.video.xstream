@@ -8,16 +8,17 @@ from resources.lib.handler.ParameterHandler import ParameterHandler
 from resources.lib.config import cConfig
 from resources.lib import logger
 import string
+import json
 
     
 # Variablen definieren die "global" verwendet werden sollen
 SITE_IDENTIFIER = 'burning_series_org'
-SITE_NAME = 'Burning-Seri.es'
+SITE_NAME = 'Burning-Series'
 SITE_ICON = 'burning_series.jpg'
 
-URL_MAIN = 'http://www.burning-seri.es'
-URL_SERIES = 'http://www.burning-seri.es/serie-alphabet'
-URL_ZUFALL = 'http://www.burning-seri.es/zufall'
+URL_MAIN = 'http://www.bs.to'
+URL_SERIES = 'http://www.bs.to/api/series'
+URL_COVER = 'http://s.bs.to/img/cover/%s.jpg'
 
 # Hauptmenu erstellen
 def load():
@@ -89,30 +90,22 @@ def showSeries():
     oRequestHandler.addHeaderEntry('Referer', 'http://burning-seri.es/')
     sHtmlContent = oRequestHandler.request();
     sChar = oParams.getValue('char')
+    if sChar: sChar = sChar.lower()
 
-    sPattern = "<ul id='serSeries'>(.*?)</ul>"
-    oParser = cParser()
-    aResult = oParser.parse(sHtmlContent, sPattern)
-
-    if aResult[0]:
-        sHtmlContent = aResult[1][0]
-        sPattern = '<li><a href="([^"]+)">(.*?)</a></li>'
+    series = json.loads(sHtmlContent)
+    total = len(series)
+    for serie in series:
+        sTitle = serie["series"].encode('utf-8') 
         if sChar:
             if sChar == '#':
-                sPattern = '<li><a href="([^"]+)">([^a-zA-Z].*?)</a></li>'
-            else:
-                sPattern = '<li><a href="([^"]+)">('+sChar+'.*?)</a></li>'
-        
-        oParser = cParser()
-        aResult = oParser.parse(sHtmlContent, sPattern)
-        if aResult[0]:
-            total = len(aResult[1])
-            for aEntry in aResult[1]:
-                sTitle = cUtil().unescape(aEntry[1].decode('utf-8')).encode('utf-8')
-                guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
-                guiElement.setMediaType('tvshow')              
-                oParams.addParams({'siteUrl' : URL_MAIN + '/' + str(aEntry[0]), 'Title' : sTitle})
-                oGui.addFolder(guiElement, oParams, iTotal = total)
+                if sTitle[0].isalpha():continue
+            elif sTitle[0].lower() != sChar: continue
+     
+        guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
+        guiElement.setMediaType('tvshow')
+        guiElement.setThumbnail(URL_COVER %serie["id"])        
+        oParams.addParams({'siteUrl' : URL_SERIES + '/' + str(serie["id"]), 'Title' : sTitle})
+        oGui.addFolder(guiElement, oParams, iTotal = total)
 
     oGui.setView('tvshows')
     oGui.setEndOfDirectory()
@@ -127,33 +120,23 @@ def showSeasons():
     sImdb = params.getValue('imdbID')
     
     logger.info("%s: show seasons of '%s' " % (SITE_NAME, sTitle))
-    
-    oRequestHandler = cRequestHandler(sUrl)
-    oRequestHandler.addHeaderEntry('Referer', 'http://burning-seri.es/')
-    sHtmlContent = oRequestHandler.request();
-	
-    sPattern = '<ul class="pages">(.*?)</ul>'
-    oParser = cParser()
-    aResult = oParser.parse(sHtmlContent, sPattern)    
-    if (aResult[0] == True):
-        sHtmlContent = aResult[1][0]
 
-        sPattern = '[^n]"><a href="([^"]+)">(.*?)</a>'
-        oParser = cParser()
-        aResult = oParser.parse(sHtmlContent, sPattern)
-        if (aResult[0] == True):
-            total = len(aResult[1])
-            for aEntry in aResult[1]:
-                seasonNum = str(aEntry[1])
-                oGuiElement = cGuiElement('Staffel ' + seasonNum, SITE_IDENTIFIER, 'showEpisodes')
-                oGuiElement.setMediaType('season')
-                oGuiElement.setSeason(seasonNum)
-                oGuiElement.setTVShowTitle(sTitle)
-                oParams = ParameterHandler()
-                oParams.setParam('siteUrl', URL_MAIN + '/' + str(aEntry[0]))
-                oParams.setParam('Title', sTitle)
-                oParams.setParam('Season', seasonNum)
-                oGui.addFolder(oGuiElement, oParams, iTotal = total)
+    oRequestHandler = cRequestHandler(sUrl+"/1")
+    oRequestHandler.addHeaderEntry('Referer', 'http://burning-seri.es/')
+    sHtmlContent = oRequestHandler.request()
+    data = json.loads(sHtmlContent)
+    total = int(data["series"]["seasons"])
+    for i in range(1,total+1):
+        seasonNum = str(i)
+        guiElement = cGuiElement('%s - Staffel %s' %(sTitle,seasonNum), SITE_IDENTIFIER, 'showEpisodes')
+        guiElement.setMediaType('season')
+        guiElement.setSeason(seasonNum)
+        guiElement.setTVShowTitle(sTitle)
+        oParams = ParameterHandler()
+
+        params.setParam('Season', seasonNum)
+        guiElement.setThumbnail(URL_COVER %data["series"]["id"])
+        oGui.addFolder(guiElement, params, iTotal = total)
     oGui.setView('seasons')
     oGui.setEndOfDirectory()
 
@@ -167,51 +150,25 @@ def showEpisodes():
     
     logger.info("%s: show episodes of '%s' season '%s' " % (SITE_NAME, sShowTitle, sSeason)) 
     
-    oRequestHandler = cRequestHandler(sUrl)
+    oRequestHandler = cRequestHandler(sUrl+"/"+sSeason)
     sHtmlContent = oRequestHandler.request();
+    data = json.loads(sHtmlContent)
+    total = len(data['epi'])
+    for episode in data['epi']:
+        if episode['german']:
+            title = episode['german'].encode('utf-8')
+        else:
+            title = episode['english'].encode('utf-8')
+        guiElement = cGuiElement(str(episode['epi'])+" - "+title, SITE_IDENTIFIER, 'showHosters')
+        guiElement.setMediaType('episode')
+        guiElement.setSeason(data['season'])
+        guiElement.setEpisode(episode['epi'])
+        guiElement.setTVShowTitle(sShowTitle)
+        guiElement.setThumbnail(URL_COVER %data["series"]["id"])
 
-    sPattern = '<table>(.*?)</table>'
-    oParser = cParser()
-    aResult = oParser.parse(sHtmlContent, sPattern)
-    if (aResult[0] == True):
-        sHtmlContent = aResult[1][0]
-        sPattern = '<td>([^<]+)</td>\s*<td><a href="([^"]+)">(.*?)</a>.*?<td class="nowrap">(\s*<a|\s*</td).*?</tr>'
-        aResult = oParser.parse(sHtmlContent, sPattern)
-        if (aResult[0] == True):
-            total = len(aResult[1])
-            for aEntry in aResult[1]:
-                if aEntry[3].strip() == '</td':
-                    continue
-                sNumber = str(aEntry[0]).strip()
-                oGuiElement = cGuiElement('Episode ' + sNumber, SITE_IDENTIFIER, 'showHosters')
-                oGuiElement.setMediaType('episode')
-                oGuiElement.setSeason(sSeason)
-                oGuiElement.setEpisode(sNumber)
-                oGuiElement.setTVShowTitle(sShowTitle)
-
-                sPattern = '<strong>(.*?)</strong>'
-                aResultTitle = oParser.parse(str(aEntry[2]), sPattern)
-                if (aResultTitle[0]== True):
-                    sTitleName = str(aResultTitle[1][0]).strip()
-                else:
-                    sPattern = '<span lang="en">(.*?)</span>'
-                    aResultTitle = oParser.parse(str(aEntry[2]), sPattern)
-                    if (aResultTitle[0]== True):
-                        sTitleName = str(aResultTitle[1][0]).strip()
-                    else:
-                        sTitleName = ''
-                sTitle = sNumber
-                sTitleName = cUtil().unescape(sTitleName.decode('utf-8')).encode('utf-8')
-                oParams.setParam('EpisodeTitle', sTitleName)
-                sTitle = sTitle + ' - ' + sTitleName
-
-                oGuiElement.setTitle(sTitle)
-                oParams.setParam('siteUrl', URL_MAIN + '/' + str(aEntry[1]))
-                oParams.setParam('EpisodeNr', sNumber)
-                oParams.setParam('TvShowTitle', sShowTitle)
-                oParams.setParam('Title', sTitleName)
-                oGui.addFolder(oGuiElement, oParams, bIsFolder = False, iTotal = total)
-  
+        #oParams.setParam('EpisodeNr', episode['epi'])
+        oParams.setParam('siteUrl',sUrl+"/"+sSeason+"/"+episode['epi'])
+        oGui.addFolder(guiElement, oParams, bIsFolder = False, iTotal = total)  
     oGui.setView('episodes')
     oGui.setEndOfDirectory()
 
@@ -233,34 +190,23 @@ def dummyFolder():
     return
             
 def showHosters():
-    #oGui = cGui()
-	
     oParams= ParameterHandler()
     sTitle = oParams.getValue('Title')	
     sUrl = oParams.getValue('siteUrl')
     
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
-    #if not META:
-    #    __createInfo(oGui, sHtmlContent, sTitle)
-    
-    sPattern = '<h3>Hoster dieser Episode(.*?)</ul>'
-    oParser = cParser()
-    aResult = oParser.parse(sHtmlContent, sPattern)
-    if (aResult[0] == True):
-        hosters = []
-        sHtmlContent = aResult[1][0]
-        sPattern = 'href="([^"]+)">.*?class="icon ([^"]+)"></span> ([^<]+?)</a>'
-        oParser = cParser()
-        aResult = oParser.parse(sHtmlContent, sPattern)
-        if (aResult[0] == True):
-            for aEntry in aResult[1]:
-                hoster = dict()
-                hoster['link'] = URL_MAIN + '/' + str(aEntry[0])
-                hoster['name'] = str(aEntry[2]).split(' - Teil')[0]
-                hoster['displayedName'] = str(aEntry[2])
-                hosters.append(hoster)
-    hosters.append('getHosterUrl')
+    data = json.loads(sHtmlContent)
+
+    hosters = []
+    for link in data['links']:
+        hoster = dict()
+        hoster['link'] = URL_MAIN + '/api/watch/'+ link['id'] 
+        hoster['name'] = link['hoster']
+        hoster['displayedName'] = link['hoster']
+        hosters.append(hoster)
+    if hosters:
+        hosters.append('getHosterUrl')
     return hosters
 
 def __getMovieTitle(sHtmlContent):
@@ -280,15 +226,11 @@ def getHosterUrl(sUrl = False):
         sUrl = oParams.getValue('url')
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request();
-	
-    sPattern = '<div id="video_actions">.*?<a href="([^"]+)" target="_blank">'
-    oParser = cParser()
-    aResult = oParser.parse(sHtmlContent, sPattern)
+    data = json.loads(sHtmlContent)
+
     results = []
-    if (aResult[0] == True):
-        sStreamUrl = aResult[1][0]
-        result = {}
-        result['streamUrl'] = sStreamUrl
-        result['resolved'] = False
-        results.append(result)
+    result = {}
+    result['streamUrl'] = data['fullurl']
+    result['resolved'] = False
+    results.append(result)
     return results
