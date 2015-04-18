@@ -23,6 +23,6 @@ def __writeLog(sLog, cLogLevel):
     params = ParameterHandler()
     if params.exist('site'):
         site = params.getValue('site')
-        print "\t[PLUGIN] xStream->" + site + ": " + str(sLog)
+        print "\t[xStream] ->" + site + ": " + str(sLog)
     else:
-        print "\t[PLUGIN] xStream: " + str(sLog)
+        print "\t[xStream] " + str(sLog)
