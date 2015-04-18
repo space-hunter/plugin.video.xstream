@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.7
 import os
 import urllib
-import urllib2
+import httplib
 import mechanize
 import xbmc
 import xbmcgui
@@ -81,7 +81,9 @@ class cRequestHandler:
             logger.info(e)
         sParameters = urllib.urlencode(self.__aParameters)
 
-        opener = mechanize.build_opener(SmartRedirectHandler)
+        opener = mechanize.build_opener(SmartRedirectHandler,
+                                        mechanize.HTTPEquivProcessor,
+                                        mechanize.HTTPRefreshProcessor)
         if (len(sParameters) > 0):
             oRequest = mechanize.Request(self.__sUrl, sParameters)
         else:
@@ -98,14 +100,14 @@ class cRequestHandler:
                 return sContent
         try:
             oResponse = opener.open(oRequest,timeout = 60)             
-        except urllib2.HTTPError, e:
+        except mechanize.HTTPError, e:
             if not self.ignoreErrors:
                 xbmcgui.Dialog().ok('xStream','Fehler beim Abrufen der Url:',self.__sUrl, str(e))
                 logger.error("HTTPError "+str(e)+" Url: "+self.__sUrl)
                 return ''
             else:
                 oResponse = e                 
-        except urllib2.URLError, e:
+        except mechanize.URLError, e:
             xbmcgui.Dialog().ok('xStream',str(e.reason), 'Fehler')
             logger.error("URLError "+str(e.reason)+" Url: "+self.__sUrl)
             return ''
@@ -113,8 +115,6 @@ class cRequestHandler:
             xbmcgui.Dialog().ok('xStream', str(e))
             logger.error("HTTPException "+str(e)+" Url: "+self.__sUrl)
             return ''
-            cGui().showError(e.read(), 'Fehler',5)
-            checksLogger.error('HTTPException')
         #except Exception:
         #except:
             #oResponse = mechanize.urlopen(oRequest)
