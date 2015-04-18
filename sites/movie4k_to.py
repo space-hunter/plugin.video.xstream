@@ -254,13 +254,8 @@ def showSearch():
     oGui.setEndOfDirectory()
 
 def _search(oGui, sSearchText):
-    # dummy request to obtain securekey
-    #oRequest = cRequestHandler('http://www.movie4k.to/searchAutoCompleteNew.php?search=the')
-    #response = oRequest.request()
-    #oParser = cParser()
-    #aResult = oParser.parse(response, 'securekey=([^&]+)&')
-    #if aResult[0]:
-    #    key = str(aResult[1][0])
+    # add wildcard to find results where seatchText is part of a word
+    sSearchText = '%'+sSearchText+'%'
     # perform search
     oRequest = cRequestHandler(URL_SEARCH)
     oRequest.addParameters('search', sSearchText)
