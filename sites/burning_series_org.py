@@ -18,7 +18,7 @@ SITE_ICON = 'burning_series.jpg'
 
 URL_MAIN = 'http://www.bs.to'
 URL_SERIES = 'http://www.bs.to/api/series'
-URL_COVER = 'http://s.bs.to/img/cover/%s.jpg'
+URL_COVER = 'http://s.bs.to/img/cover/%s.jpg|encoding=gzip'
 
 # Hauptmenu erstellen
 def load():
@@ -45,27 +45,18 @@ def showSearch():
 def _search(oGui, sSearchText):
     sUrl = URL_SERIES
     oRequestHandler = cRequestHandler(sUrl)
-    oRequestHandler.addHeaderEntry('Referer', 'http://burning-seri.es/')
     params = ParameterHandler()
     sHtmlContent = oRequestHandler.request()
-    sPattern = "<ul id='serSeries'>(.*?)</ul>"
-    oParser = cParser()
-    aResult = oParser.parse(sHtmlContent, sPattern)
-    if not aResult[0]:
-        return
-    sHtmlContent = aResult[1][0]
-    sPattern = '<li><a href="([^"]+)">(([^<]+)?%s([^<]+)?)</a></li>' % sSearchText  
-    oParser = cParser()
-    aResult = oParser.parse(sHtmlContent, sPattern, ignoreCase = True)
-    if not aResult[0]:
-        return
-    total = len(aResult[1])
-    for aEntry in aResult[1]:
-        sTitle = cUtil().unescape(aEntry[1].decode('utf-8')).encode('utf-8')
-        guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
-        guiElement.setMediaType('tvshow')              
-        params.addParams({'siteUrl' : URL_MAIN + '/' + str(aEntry[0]), 'Title' : sTitle})
-        oGui.addFolder(guiElement, params, iTotal = total)
+    series = json.loads(sHtmlContent)
+    total = len(series)
+    for serie in series:
+        sTitle = serie["series"].encode('utf-8') 
+        if sTitle.find(sSearchText):
+            guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
+            guiElement.setMediaType('tvshow')
+            guiElement.setThumbnail(URL_COVER % serie["id"])        
+            params.addParams({'siteUrl' : URL_SERIES + '/' + str(serie["id"]), 'Title' : sTitle})
+            oGui.addFolder(guiElement, params, iTotal = total)
 
 def showCharacters():
     oGui = cGui()
@@ -87,7 +78,6 @@ def showSeries():
     
     sUrl = URL_SERIES
     oRequestHandler = cRequestHandler(sUrl)
-    oRequestHandler.addHeaderEntry('Referer', 'http://burning-seri.es/')
     sHtmlContent = oRequestHandler.request();
     sChar = oParams.getValue('char')
     if sChar: sChar = sChar.lower()
@@ -103,7 +93,7 @@ def showSeries():
      
         guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
         guiElement.setMediaType('tvshow')
-        guiElement.setThumbnail(URL_COVER %serie["id"])        
+        guiElement.setThumbnail(URL_COVER % serie["id"])        
         oParams.addParams({'siteUrl' : URL_SERIES + '/' + str(serie["id"]), 'Title' : sTitle})
         oGui.addFolder(guiElement, oParams, iTotal = total)
 
@@ -122,7 +112,6 @@ def showSeasons():
     logger.info("%s: show seasons of '%s' " % (SITE_NAME, sTitle))
 
     oRequestHandler = cRequestHandler(sUrl+"/1")
-    oRequestHandler.addHeaderEntry('Referer', 'http://burning-seri.es/')
     sHtmlContent = oRequestHandler.request()
     data = json.loads(sHtmlContent)
     total = int(data["series"]["seasons"])
@@ -135,7 +124,7 @@ def showSeasons():
         oParams = ParameterHandler()
 
         params.setParam('Season', seasonNum)
-        guiElement.setThumbnail(URL_COVER %data["series"]["id"])
+        guiElement.setThumbnail(URL_COVER % data["series"]["id"])
         oGui.addFolder(guiElement, params, iTotal = total)
     oGui.setView('seasons')
     oGui.setEndOfDirectory()
@@ -164,30 +153,13 @@ def showEpisodes():
         guiElement.setSeason(data['season'])
         guiElement.setEpisode(episode['epi'])
         guiElement.setTVShowTitle(sShowTitle)
-        guiElement.setThumbnail(URL_COVER %data["series"]["id"])
+        guiElement.setThumbnail(URL_COVER % data["series"]["id"])
 
         #oParams.setParam('EpisodeNr', episode['epi'])
         oParams.setParam('siteUrl',sUrl+"/"+sSeason+"/"+episode['epi'])
         oGui.addFolder(guiElement, oParams, bIsFolder = False, iTotal = total)  
     oGui.setView('episodes')
     oGui.setEndOfDirectory()
-
-def __createInfo(oGui, sHtmlContent, sTitle):
-    sPattern = '<div id="desc_spoiler">([^<]+)</div>.*?<img src="([^"]+)" alt="Cover"/>'
-    oParser = cParser()
-    aResult = oParser.parse(sHtmlContent, sPattern)
-    
-    if (aResult[0] == True):
-        for aEntry in aResult[1]:
-            sDescription = cUtil().unescape(aEntry[0].decode('utf-8')).encode('utf-8').strip()
-            oGuiElement = cGuiElement('info (press Info Button)',SITE_IDENTIFIER,'dummyFolder')
-            sMovieTitle = __getMovieTitle(sHtmlContent)
-            oGuiElement.setDescription(sDescription)
-            oGuiElement.setThumbnail(URL_MAIN+'/'+aEntry[1])
-            oGui.addFolder(oGuiElement)
-
-def dummyFolder():
-    return
             
 def showHosters():
     oParams= ParameterHandler()
@@ -208,15 +180,6 @@ def showHosters():
     if hosters:
         hosters.append('getHosterUrl')
     return hosters
-
-def __getMovieTitle(sHtmlContent):
-    sPattern = '</ul><h2>(.*?)<small id="titleEnglish" lang="en">(.*?)</small>'
-    oParser = cParser()
-    aResult = oParser.parse(sHtmlContent, sPattern)   
-    if (aResult[0] == True):
-	for aEntry in aResult[1]:
-	    return str(aEntry[0]).strip() + ' - ' + str(aEntry[1]).strip()
-    return ''
 
 def getHosterUrl(sUrl = False):
     oParams = ParameterHandler()
