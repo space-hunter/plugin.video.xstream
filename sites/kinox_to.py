@@ -19,6 +19,7 @@ oConfig = cConfig()
 domain = oConfig.getSetting('kinox_to-domain')
 ####
 URL_MAIN = 'http://' + domain
+URL_NEWS = URL_MAIN + '/index.php'
 URL_CINEMA_PAGE = URL_MAIN + '/Cine-Films.html'
 URL_GENRE_PAGE = URL_MAIN +'/Genre.html'
 URL_MOVIE_PAGE = URL_MAIN + '/Movies.html'
@@ -52,7 +53,7 @@ def load():
     ## Create all main menu entries
     oGui = cGui()
     
-    oParams.setParam('sUrl', URL_MAIN)
+    oParams.setParam('sUrl', URL_NEWS)
     oParams.setParam('page', 1)
     oParams.setParam('mediaType', 'news')
     oGui.addFolder(cGuiElement('Neues von Heute',SITE_IDENTIFIER,'showNews'),oParams)
@@ -197,7 +198,7 @@ def __getPreferredLanguage():
     return sPrefLang    
   
 def __getSecurityCookieValue():
-    oRequestHandler = cRequestHandler(URL_MAIN, False)
+    oRequestHandler = cRequestHandler(URL_NEWS, False)
     oRequestHandler.removeNewLines(False)
     oRequestHandler.removeBreakLines(False)
     sHtmlContent = oRequestHandler.request()
@@ -342,7 +343,7 @@ def showNews():
         for aEntry in aResult[1]:
             sTitle = str(aEntry[0]) + ' (' + str(aEntry[1]) + ')'
             oGuiElement = cGuiElement(sTitle, SITE_IDENTIFIER,'parseNews')
-            oParams.addParams({'sUrl':URL_MAIN, 'page':1, 'mediaType':'news', 'sNewsTitle':aEntry[0]})
+            oParams.addParams({'sUrl':URL_NEWS, 'page':1, 'mediaType':'news', 'sNewsTitle':aEntry[0]})
             oGui.addFolder(oGuiElement, oParams)
     oGui.setEndOfDirectory()
 
@@ -847,6 +848,7 @@ def getHosterUrlandPlay(sUrl = False):
         result['streamUrl'] = sPartUrl
         result['resolved'] = False
         results.append(result)
+  print results
   return results
 
   

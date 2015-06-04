@@ -18,7 +18,7 @@ oConfig = cConfig()
 DOMAIN = oConfig.getSetting('movie4k_to-domain')
 ####
 URL_MAIN = 'http://www.' + DOMAIN
-URL_MOVIES = URL_MAIN
+URL_MOVIES = URL_MAIN + '/index.php'
 URL_MOVIES_ALL = URL_MAIN + '/movies-all'
 URL_MOVIES_GENRE = URL_MAIN + '/genres-movies.html'
 
@@ -109,7 +109,7 @@ def showAdult():
     return False 
     
 def __clearProtection():
-    oRequestHandler = cRequestHandler(URL_MAIN, False)
+    oRequestHandler = cRequestHandler(URL_MAIN+'/index.php', False)
     oRequestHandler.removeNewLines(False)
     oRequestHandler.removeBreakLines(False)
     sHtmlContent = oRequestHandler.request()
@@ -421,7 +421,7 @@ def __parseMovieSimpleList(sUrl, iPage, oGui, sHtmlContent = False):
                 oOutputParameterHandler.setParam('sLanguageToken',sLanguageToken)
                 oGuiElement.setFunction('parseMovieSimpleList')
             if id in thumbs:
-                oGuiElement.setThumbnail(thumbs[id])
+                oGuiElement.setThumbnail(thumbs[id].replace('4k.to','4k.tv'))
             if type == 'movie':
                 oGui.addFolder(oGuiElement, oOutputParameterHandler, bIsFolder = False, iTotal = total)
             else:
@@ -486,8 +486,7 @@ def showFeaturedMovies():
                 sDescription = cUtil().removeHtmlTags(sDescription)
                 oGuiElement.setDescription(sDescription)
                 oGuiElement.addItemValue('Rating',fRating)
-                oGuiElement.setThumbnail(sThumbnail)
-            
+                oGuiElement.setThumbnail(sThumbnail.replace('https','http'))           
                 oGuiElement.setTitle(sMovieTitle)
                 oGuiElement.setLanguage(__getLanguage(aEntry[3]))
                 oGuiElement._sQuality = aEntry[5]            
@@ -525,7 +524,7 @@ def showFeaturedSeries():
                     oGuiElement.setSiteName(SITE_IDENTIFIER)
                     oGuiElement.setFunction('showAllSeasons')
                     oGuiElement.setTitle(sMovieTitle)
-                    oGuiElement.setThumbnail(sThumbnail)
+                    oGuiElement.setThumbnail(sThumbnail.replace('https','http'))
                     oGuiElement.setLanguage(__getLanguage(aEntry[3]))
                     oGuiElement.setMediaType('tvshow')
                     oOutputParameterHandler = ParameterHandler()
@@ -535,31 +534,6 @@ def showFeaturedSeries():
                 oGui.setView('tvshows')
                 oGui.setEndOfDirectory()
         
-        
-def createInfo(oGui='', sHtmlContent=''):
-    # params = ParameterHandler()
-    # if not params.exist('sUrl') or not params.exist('sMovieTitle'):
-        # return
-    # sUrl = params.getValue('sUrl')
-    # sMovieTitle = params.getValue('sMovieTitle')
-    # sHtmlContent = __getHtmlContent(sUrl)
-    sPattern = '<img src="(http://img.movie4k.to/thumbs/[^"]+)".*?<div class="moviedescription">(.*?)<'
-    oParser = cParser()
-    aResult = oParser.parse(sHtmlContent, sPattern)
-    if (aResult[0] == True and not oGui==''):
-        for aEntry in aResult[1]:
-            oGuiElement = cGuiElement()
-            oGuiElement.setSiteName(SITE_IDENTIFIER)
-            oGuiElement.setTitle('info (press Info Button)')
-            oGuiElement.setThumbnail(aEntry[0])
-            oGuiElement.setFunction('dummyFolder')
-            oGuiElement.setDescription(cUtil().removeHtmlTags(aEntry[1]).strip())
-            oGui.addFolder(oGuiElement,bIsFolder=False)
-    return
-
-def dummyFolder():
-    oGui = cGui()
-    oGui.setEndOfDirectory()
 
 def showHostersSeries():
     params = ParameterHandler()
