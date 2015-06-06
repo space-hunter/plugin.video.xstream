@@ -153,11 +153,11 @@ def play():
         oRequest = cRequestHandler(sUrl)
         sHtmlContent = oRequest.request()
 
-        sPattern = ': "([^\."]+)\.flv"'
+        sPattern = ': "([^\."]+\.flv)"'
         oParser = cParser()
         aResult = oParser.parse(sHtmlContent, sPattern)
         if (aResult[0] == True):
-            sStreamUrl = URL_GET_STREAM + str(aResult[1][0])+'_HD.flv?autostart=true'           
+            sStreamUrl = URL_GET_STREAM + str(aResult[1][0])+'?autostart=true'           
             result = {}
             result['streamUrl'] = sStreamUrl
             result['resolved'] = True
