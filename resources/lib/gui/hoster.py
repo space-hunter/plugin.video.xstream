@@ -7,7 +7,7 @@ from resources.lib.player import cPlayer
 import xbmc, xbmcgui
 import logger
 #test
-#import xbmcplugin
+import xbmcplugin
 #import sys
 
 class cHosterGui:
@@ -21,6 +21,7 @@ class cHosterGui:
             # self.autoPlay = True
         # else:
             # self.autoPlay = False
+        self.userAgent = "|User-Agent=Mozilla/5.0 (Windows; U; Windows NT 5.1; de-DE; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3"
         self.maxHoster = int(cConfig().getSetting('maxHoster'))
         self.dialog = False
 
@@ -40,7 +41,7 @@ class cHosterGui:
 
         sSeason = params.getValue('season')
         sEpisode = params.getValue('episode')
-        sShowTitle = params.getValue('TvShowTitle')
+        sShowTitle = params.getValue('TVShowTitle')
         sThumbnail = params.getValue('thumb')
               
         if siteResult:
@@ -55,44 +56,54 @@ class cHosterGui:
             logger.info('call play: ' + sMediaUrl)
             sLink = urlresolver.resolve(sMediaUrl)
         else:
-            oGui.showError('xStream', 'Hosterlink not found', 5)
+            oGui.showError('xStream', 'kein Hosterlink übergeben', 5)
             return False
-        try:
+        if hasattr(sLink, 'msg'):
             msg = sLink.msg
-        except:
+        else:
             msg = False
         if sLink != False and not msg:
             logger.info('file link: ' + str(sLink))
-            oGuiElement = cGuiElement()
-            oGuiElement.setSiteName(self.SITE_NAME)
-            oGuiElement.setMediaUrl(sLink)
-            oGuiElement.setTitle(sFileName)
+            listItem = xbmcgui.ListItem(path=sLink + self.userAgent)
+            info = {}
+            info['Title'] = sFileName
             if sThumbnail:
-                oGuiElement.setThumbnail(sThumbnail)
+                listItem.setThumbnailImage(sThumbnail)
             if sShowTitle:
-                oGuiElement.addItemProperties('Episode',sEpisode)
-                oGuiElement.addItemProperties('Season',sSeason)
-                oGuiElement.addItemProperties('TvShowTitle',sShowTitle)
-
-            #listItem = xbmcgui.ListItem(path=sLink)
-            #listItem.setInfo(type="Video", infoLabels='')
-            #listItem.setProperty('IsPlayable', 'true')
-            #pluginHandle = oGui.pluginHandle
-            #xbmcplugin.setResolvedUrl(pluginHandle, True, listItem)
-
+                info['Episode'] = sEpisode
+                info['Season'] = sSeason
+                info['TvShowTitle'] = sShowTitle
             oPlayer = cPlayer()
-            oPlayer.clearPlayList()
-            oPlayer.addItemToPlaylist(oGuiElement)
             if self.dialog:
                try:
                    self.dialog.close()
                except:
-                   pass
-            oPlayer.startPlayer()
+                   pass       
+            listItem.setInfo(type="Video", infoLabels=info)
+            listItem.setProperty('IsPlayable', 'true')
+
+            pluginHandle = oGui.pluginHandle
+            xbmcplugin.setResolvedUrl(pluginHandle, True, listItem)
+            oPlayer.startPlayer() # autostream loop is still active while playing
             return True #Necessary for autoStream
         else:
-            logger.info('File link: ' + str(sLink))
-            print str(msg)
+            if not msg:
+               msg = 'Stream nicht mehr verfügbar oder Link fehlerhaft'
+            oGui.showError('xStream',str(msg),7)
+            if hasattr(sLink, 'code'):
+                logger.info(str(msg) +' UnresolveableCode: '+ str(sLink.code))
+            else:
+                logger.info(str(msg) +' UnresolveableCode: - ')
+            '''
+                UnresolveableCode
+                0: Unknown Error
+                1: The url was resolved, but the file has been permanantly
+                    removed
+                2: The file is temporarily unavailable for example due to
+                    planned site maintenance
+                3. There was an error contacting the site for example a
+                    connection attempt timed out
+            '''
             return False
 
         
@@ -209,6 +220,7 @@ class cHosterGui:
         Sort hosters based on their resolvers priority.
         '''
         import urlresolver
+        urlresolver.lazy_plugin_scan()
         ranking = []
         for hoster in hosterList:
             #if not self.checkForResolver(hoster['name']):
@@ -268,7 +280,7 @@ class cHosterGui:
             if not siteResult:
                 self.dialog.close()
                 cGui().showInfo('xStream','no supported hoster available')
-                return
+                return False
             self.dialog.update(90)
             #self.dialog.close()
             if len(siteResult) > self.maxHoster:

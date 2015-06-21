@@ -66,8 +66,8 @@ class cGui:
             bIsFolder = False
         oListItem = self.__createContextMenu(oGuiElement, oListItem, bIsFolder, sItemUrl, oOutputParameterHandler)
                  
-        #if not bIsFolder:
-        #    oListItem.setProperty('IsPlayable', 'true')        
+        if not bIsFolder:
+            oListItem.setProperty('IsPlayable', 'true')        
         xbmcplugin.addDirectoryItem(self.pluginHandle, sItemUrl, oListItem, isFolder = bIsFolder, totalItems = iTotal)
         
 
@@ -152,9 +152,9 @@ class cGui:
             if cConfig().getSetting('jd_enabled') == 'true':
                 oContextItem.setTitle("send to JDownloader")
                 aContextMenus+= [ ( oContextItem.getTitle(), "XBMC.RunPlugin(%s&playMode=jd)" % (sItemUrl,),)]   
-	    if cConfig().getSetting('pyload_enabled') == 'true':
-		oContextItem.setTitle("send to PyLoad")     
-         	aContextMenus+= [ ( oContextItem.getTitle(), "XBMC.RunPlugin(%s&playMode=pyload)" % (sItemUrl,),)]
+            if cConfig().getSetting('pyload_enabled') == 'true':
+                oContextItem.setTitle("send to PyLoad")     
+                aContextMenus+= [ ( oContextItem.getTitle(), "XBMC.RunPlugin(%s&playMode=pyload)" % (sItemUrl,),)]
         oListItem.addContextMenuItems(aContextMenus)
         #oListItem.addContextMenuItems(aContextMenus, True)  
         return oListItem
@@ -262,30 +262,25 @@ class cGui:
         
 
     def showNofication(self, sTitle, iSeconds=0):
-        if not cConfig().isDharma():
-          return
         if (iSeconds == 0):
           iSeconds = 1000
         else:
           iSeconds = iSeconds * 1000  
-        xbmc.executebuiltin("Notification(%s,%s,%s)" % (cConfig().getLocalizedString(30308), (cConfig().getLocalizedString(30309) % str(sTitle)), iSeconds))
+        xbmc.executebuiltin("Notification(%s,%s,%s,%s)" % (cConfig().getLocalizedString(30308), (cConfig().getLocalizedString(30309) % str(sTitle)), iSeconds, common.addon.getAddonInfo('icon')))
         
 
     def showError(self, sTitle, sDescription, iSeconds = 0):
-        #if not cConfig().isDharma():
-         # return
         if iSeconds == 0:
           iSeconds = 1000
         else:
           iSeconds = iSeconds * 1000
-        xbmc.executebuiltin("Notification(%s,%s,%s)" % (str(sTitle), (str(sDescription)), iSeconds))
+        xbmc.executebuiltin("Notification(%s,%s,%s,%s)" % (str(sTitle), (str(sDescription)), iSeconds, common.addon.getAddonInfo('icon')))
         
 
     def showInfo(self, sTitle, sDescription, iSeconds=0):
-        if not cConfig().isDharma():
-            return
         if (iSeconds == 0):
             iSeconds = 1000
         else:
             iSeconds = iSeconds * 1000
-        xbmc.executebuiltin("Notification(%s,%s,%s)" % (str(sTitle), (str(sDescription)), iSeconds))
+        xbmc.executebuiltin("Notification(%s,%s,%s,%s)" % (str(sTitle), (str(sDescription)), iSeconds, common.addon.getAddonInfo('icon')))
+         

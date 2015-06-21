@@ -91,11 +91,12 @@ class cPlayer:
     def startPlayer(self):
         logger.info('start player')
         xbmcPlayer = XstreamPlayer()
-        logger.info('add playlist to player instance')
-        oPlayList = self.__getPlayList()
-        xbmcPlayer.play(oPlayList)
+        #logger.info('add playlist to player instance')
+        #oPlayList = self.__getPlayList()
+        #xbmcPlayer.play(oPlayList)
 
         if not cConfig().getSetting('metahandler')=='true':
+            logger.info('MetaHandler is deactivated, stopping player monitor')
             return
         while (not xbmc.abortRequested) & (not xbmcPlayer.streamFinished):
             while xbmcPlayer.isPlayingVideo():
