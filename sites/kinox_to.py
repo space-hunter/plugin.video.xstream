@@ -507,6 +507,11 @@ def parseMovieEntrySite():
         # get movieEntrySite content
         sHtmlContent = __getHtmlContent(sUrl, sSecurityValue)
         sMovieTitle = __createMovieTitle(sHtmlContent)
+        # get thumbnail
+        result = cParser().parse(sHtmlContent, '<div class="Grahpics">.*?<img src="([^"]+)"')
+        thumbnail = ''
+        if result[0]:
+            thumbnail = URL_MAIN + str(result[1][0])
 
         bIsSerie = __isSerie(sHtmlContent)
         if (bIsSerie):
@@ -517,11 +522,13 @@ def parseMovieEntrySite():
                 for item in aSeriesItems:
                     oGuiElement = cGuiElement(item['title'], SITE_IDENTIFIER, 'showHosters')
                     sShowTitle = sMovieTitle.split('(')[0].split('*')[0]
+                    oGuiElement.setThumbnail(thumbnail)
                     oGuiElement.setMediaType('episode')
                     oGuiElement.setSeason(item['season'])
                     oGuiElement.setEpisode(item['episode'])
+                    oGuiElement.setTVShowTitle(sShowTitle)
 
-                    oParams.addParams({'sUrl':item['url'], 'episode':item['episode'], 'season':item['season'], 'TvShowTitle':sShowTitle})
+                    oParams.addParams({'sUrl':item['url'], 'episode':item['episode'], 'season':item['season']})
                     oGui.addFolder(oGuiElement, oParams, bIsFolder = False, iTotal = len(aSeriesItems))
             oGui.setView('episodes')
             oGui.setEndOfDirectory()
