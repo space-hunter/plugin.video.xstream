@@ -49,9 +49,10 @@ def _search(oGui, sSearchText):
     sHtmlContent = oRequestHandler.request()
     series = json.loads(sHtmlContent)
     total = len(series)
+    sSearchText = sSearchText.lower()
     for serie in series:
         sTitle = serie["series"].encode('utf-8') 
-        if sTitle.find(sSearchText):
+        if sTitle.lower().find(sSearchText) != -1:
             guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
             guiElement.setMediaType('tvshow')
             guiElement.setThumbnail(URL_COVER % serie["id"])        
