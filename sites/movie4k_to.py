@@ -286,7 +286,7 @@ def showGenre():
         oRequest = cRequestHandler(sUrl)
         sHtmlContent = oRequest.request()
 
-        sPattern = '<TR>.*?<a href="([^"]+)">(.*?)</a>.*?<TD id="tdmovies" width="50">(.*?)</TD>'
+        sPattern = '<TR>.*?<a href="([^"]+)">([^<]+)</a>.*?>([^<]+)</TD>'
 
         oParser = cParser()
         aResult = oParser.parse(sHtmlContent, sPattern)

@@ -1,4 +1,18 @@
-﻿- Version 2.1.12 - 11.01.2015
+﻿- Version 2.1.13 - 21.06.2015
+================================================================================
+    - fix: Kinoleak search
+    - fix: hoster progressdialog, empty hosterlists
+    - fix: create new pluginDB json if old one is corrupt
+    - fix: gstream next and goto
+    - fix: kinox episode, season, hosterlink, ssl error
+    - fix: m4k movie genre list, ssl error
+    - fix: BL.de streamlink
+    - fix: BS.to new domain, api, images 
+    - add: M4k search with wildcards for broader result range
+    THX to all contributors
+
+
+- Version 2.1.12 - 11.01.2015
 ================================================================================
     - fix: gstream content RegEx
     - fix: pyLoadHandler (config)
