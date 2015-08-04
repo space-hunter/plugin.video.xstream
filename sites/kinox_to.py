@@ -533,6 +533,7 @@ def parseMovieEntrySite():
             oGui.setView('episodes')
             oGui.setEndOfDirectory()
         else:
+            logger.info('Movie')
             result = showHosters(sHtmlContent, sMovieTitle)
             return result    
 
@@ -773,18 +774,18 @@ def showHosters(sHtmlContent = '', sTitle = False):
         sTitle = oParams.getValue('title')
     if (oParams.exist('sUrl')):
         sUrl = oParams.getValue('sUrl')
-
+    
     sHtmlContent = __getHtmlContent(sUrl, sSecurityValue)
-
-    sPattern = '<li id="Hoster.*?rel="([^"]+)".*?<div class="Named">(.*?)</div>(.*?)</div></li>'
+    sPattern = 'class="MirBtn.*?rel="([^"]+)".*?class="Named">([^<]+)</div>(.*?)</div>'
     oParser = cParser()
     aResult = oParser.parse(sHtmlContent, sPattern)
     hosters = []
     if (aResult[0]):
         for aEntry in aResult[1]:
+            print aEntry
             sHoster = aEntry[1]
             # check for additional mirrors
-            sPattern = '<b>Mirror</b>: [1-9]/([1-9])<br />'
+            sPattern = '<b>Mirror</b>: [1-9]/([1-9])<br/>'
             oParser = cParser()
             aResult = oParser.parse(aEntry[2], sPattern)
             mirrors = 1
