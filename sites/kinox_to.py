@@ -373,7 +373,7 @@ def parseNews():
         oGui.setEndOfDirectory()
         return
     sPattern = '<td class="Icon"><img src="/gr/sys/lng/(\d+).png" alt="language" width="16" '+\
-    'height="11".*?<td class="Title">.*?href="([^\"]+)".*?class="OverlayLabel">([^<]+)<'+\
+    'height="11".*?<td class="Title.*?rel="([^"]+)"><a href="([^\"]+)".*?class="OverlayLabel">([^<]+)<'+\
     '(span class="EpisodeDescr">)?([^<]+)'
     oParser = cParser()
     aResult = oParser.parse(aResult[1][0], sPattern)
@@ -385,11 +385,11 @@ def parseNews():
     # Create an entry for every news line
     for aEntry in aResult[1]:
         sLang = __createLanguage(aEntry[0])
-        sTitle = cUtil().unescape(aEntry[2]).strip()
+        sTitle = cUtil().unescape(aEntry[3]).strip()
         if sTitle.endswith(':'):
             sTitle = sTitle[:-1]
         sTitle, subLang = __checkSubLanguage(sTitle)
-        sUrl = aEntry[1]
+        sUrl = aEntry[2]
         # If there are several urls, just pick the first one
         aUrl = sUrl.split(",")
         if len(aUrl) > 0:
@@ -397,6 +397,7 @@ def parseNews():
             oGuiElement = cGuiElement(sTitle, SITE_IDENTIFIER,'parseMovieEntrySite')
             oGuiElement.setLanguage(sLang)
             oGuiElement.setSubLanguage(subLang)
+            oGuiElement.setThumbnail(URL_MAIN + str(aEntry[1]))
 
             oParams.setParam('sUrl',URL_MAIN + sUrl)
             oParams.setParam('mediaType',mediaType)
