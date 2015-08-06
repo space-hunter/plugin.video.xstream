@@ -161,9 +161,9 @@ def getHosters():
     oRequestHandler = cRequestHandler(URL_MAIN+sUrl) # gesamte Url zusammesetzen
     sHtmlContent = oRequestHandler.request()         # Seite abrufen
     
-    sPattern = 'IFRAME SRC="([^"]+)"'
+    sPattern = 'iframe src="(http[^"]+)"'
     oParser = cParser()
-    aResult = oParser.parse(sHtmlContent, sPattern)
+    aResult = oParser.parse(sHtmlContent, sPattern, ignoreCase = True)
     hosters = []                                     # hosterliste initialisieren
     sFunction='getHosterUrl'                         # folgeFunktion festlegen
     if (aResult[0] == True):
