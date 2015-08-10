@@ -287,6 +287,7 @@ def showGenre():
         sHtmlContent = oRequest.request()
 
         sPattern = '<TR>.*?<a href="([^"]+)">([^<]+)</a>.*?>([^<]+)</TD>'
+#        sPattern = '<TR>.*?<a href="([^"]+)">(.*?)</a>.*?<TD id="tdmovies" width="\d+">(.*?)</TD>'
 
         oParser = cParser()
         aResult = oParser.parse(sHtmlContent, sPattern)
@@ -318,7 +319,7 @@ def parseMovieSimpleList():
         iPage = params.getValue('iPage')
     else:
         iPage = 1
-
+    print "### parseMovieSimpleList", params.getValue('sUrl')
     if (params.exist('sUrl')):
         sUrl = params.getValue('sUrl')
         logger.info(sUrl)
@@ -462,41 +463,86 @@ def showFeaturedMovies():
     if (params.exist('sUrl')):
         sUrl = params.getValue('sUrl')
         sHtmlContent = __getHtmlContent(sUrl = sUrl)
-        sPattern = ('<div style="float:left">\s*<a href="([^"]+)".{0,1}><img src="([^"]+)".*?alt="([^"]+)".*?'
-                    '<img src="(.*?)".*?IMDB Rating: <a href="http://www.imdb.de/title/[0-9a-zA-z]+" '
-                    'target="_blank">(.*?)</a>.*?smileys/([0-9])\.gif.*?class="info"><STRONG>.*?</STRONG><BR>(.*?)(?:<BR>|</div>).*?id="xline">')
-        aResult = cParser().parse(sHtmlContent, sPattern)
-        if (aResult[0] == True):
-            oGui = cGui()
-            total = len(aResult[1])
-            for aEntry in aResult[1]:
-                newUrl = aEntry[0]
-                if not (newUrl.startswith('http')):
-                    newUrl = URL_MAIN +'/'+ newUrl
-                
-                sThumbnail = aEntry[1]             
-                sMovieTitle = cUtil().unescape(aEntry[2].strip().replace('kostenlos', ''))                
-                
-                oGuiElement = cGuiElement()
-                oGuiElement.setSiteName(SITE_IDENTIFIER)
-                oGuiElement.setFunction('showHosters')
-                oGuiElement.setMediaType('movie')
-                fRating = float(aEntry[4])
-                sDescription = cUtil().unescape(aEntry[6].strip().decode('utf-8')).encode('utf-8')
-                sDescription = cUtil().removeHtmlTags(sDescription)
-                oGuiElement.setDescription(sDescription)
-                oGuiElement.addItemValue('Rating',fRating)
-                oGuiElement.setThumbnail(sThumbnail.replace('https','http'))           
-                oGuiElement.setTitle(sMovieTitle)
-                oGuiElement.setLanguage(__getLanguage(aEntry[3]))
-                oGuiElement._sQuality = aEntry[5]            
-                oOutputParameterHandler = ParameterHandler()
-                oOutputParameterHandler.setParam('sUrl', newUrl)
-                oOutputParameterHandler.setParam('sMovieTitle', sMovieTitle)
-                
-                oGui.addFolder(oGuiElement, oOutputParameterHandler, bIsFolder=False, iTotal = total)
-            oGui.setView('movies')
-            oGui.setEndOfDirectory()
+        if re.search('xxx-updates.html', sUrl):
+            print "######## ne xx update"
+            sPattern = ('tdmovies" width="380".*?href="([^"]+)">(.*?)</a>.*?tdmovies.*?width="25.*?src="(.*?)"')
+            aResult = cParser().parse(sHtmlContent, sPattern)
+            print "##### aResult", aResult, #sHtmlContent
+            if (aResult[0] == True):
+                print "####################### result xxx update exits"
+                oGui = cGui()
+                total = len(aResult[1])
+                for aEntry in aResult[1]:
+                    newUrl = aEntry[0]
+                    if not (newUrl.startswith('http')):
+                        newUrl = URL_MAIN +'/'+ newUrl
+                    
+                    sThumbnail = URL_MAIN + aEntry[2]
+                    sMovieTitle = cUtil().unescape(aEntry[1].strip())
+                    
+                    oGuiElement = cGuiElement()
+                    oGuiElement.setSiteName(SITE_IDENTIFIER)
+                    oGuiElement.setFunction('showXXXHosters')
+                    oGuiElement.setMediaType('movie')
+                    #fRating = float(aEntry[4])
+                    #sDescription = cUtil().unescape(aEntry[6].strip().decode('utf-8')).encode('utf-8')
+                    #sDescription = cUtil().removeHtmlTags(sDescription)
+                    #oGuiElement.setDescription(sDescription)
+                    #oGuiElement.addItemValue('Rating',fRating)
+                    oGuiElement.setThumbnail(sThumbnail.replace('https','http'))           
+                    oGuiElement.setTitle(sMovieTitle)
+                    #oGuiElement.setLanguage(__getLanguage(aEntry[3]))
+                    #oGuiElement._sQuality = aEntry[5]            
+                    oOutputParameterHandler = ParameterHandler()
+                    oOutputParameterHandler.setParam('sUrl', newUrl)
+                    oOutputParameterHandler.setParam('sMovieTitle', sMovieTitle)
+                    
+                    oGui.addFolder(oGuiElement, oOutputParameterHandler, bIsFolder=False, iTotal = total)
+                oGui.setView('movies')
+                oGui.setEndOfDirectory()
+
+        else:
+            print "####################### sUrl Exits", params
+            sPattern = ('<div style="float:left">\s*<a href="([^"]+)".{0,1}><img src="([^"]+)".*?alt="([^"]+)".*?'
+                        '<img src="(.*?)".*?IMDB Rating: <a href="http://www.imdb.de/title/[0-9a-zA-z]+" '
+                        'target="_blank">(.*?)</a>.*?smileys/([0-9])\.gif.*?class="info"><STRONG>.*?</STRONG><BR>(.*?)(?:<BR>|</div>).*?id="xline">')
+    
+    #            kino = re.findall('<div style="float: left;"><a href="(.*?)"><img src=".*?" alt=".*?" title="(.*?)" border="0" style="width:105px;max-width:105px;max-height:160px;min-height:140px', data, re.S)
+    #            serien = re.findall('id="coverPreview.*?href="(.*?)">(.*?)</a>.*?tdmovies.*?width="25.*?src=.*?width="25.*?src="(.*?)"', data, re.S)
+    
+            aResult = cParser().parse(sHtmlContent, sPattern)
+            if (aResult[0] == True):
+                print "####################### result exits"
+                oGui = cGui()
+                total = len(aResult[1])
+                for aEntry in aResult[1]:
+                    newUrl = aEntry[0]
+                    if not (newUrl.startswith('http')):
+                        newUrl = URL_MAIN +'/'+ newUrl
+                    
+                    sThumbnail = aEntry[1]             
+                    sMovieTitle = cUtil().unescape(aEntry[2].strip().replace('kostenlos', ''))                
+                    
+                    oGuiElement = cGuiElement()
+                    oGuiElement.setSiteName(SITE_IDENTIFIER)
+                    oGuiElement.setFunction('showHosters')
+                    oGuiElement.setMediaType('movie')
+                    fRating = float(aEntry[4])
+                    sDescription = cUtil().unescape(aEntry[6].strip().decode('utf-8')).encode('utf-8')
+                    sDescription = cUtil().removeHtmlTags(sDescription)
+                    oGuiElement.setDescription(sDescription)
+                    oGuiElement.addItemValue('Rating',fRating)
+                    oGuiElement.setThumbnail(sThumbnail.replace('https','http'))           
+                    oGuiElement.setTitle(sMovieTitle)
+                    oGuiElement.setLanguage(__getLanguage(aEntry[3]))
+                    oGuiElement._sQuality = aEntry[5]            
+                    oOutputParameterHandler = ParameterHandler()
+                    oOutputParameterHandler.setParam('sUrl', newUrl)
+                    oOutputParameterHandler.setParam('sMovieTitle', sMovieTitle)
+                    
+                    oGui.addFolder(oGuiElement, oOutputParameterHandler, bIsFolder=False, iTotal = total)
+                oGui.setView('movies')
+                oGui.setEndOfDirectory()
 
 def showFeaturedSeries():
     params = ParameterHandler()
@@ -568,7 +614,29 @@ def showHosters():
     if (params.exist('sUrl') and params.exist('sMovieTitle')):
         sUrl = params.getValue('sUrl')
         sMovieTitle = params.getValue('sMovieTitle')
-        
+        sHtmlContent = cRequestHandler(sUrl).request()
+        sPattern = '<tr id="tablemoviesindex2">.*?<a href="([^"]+)">([^<]+)<.*?alt="(.*?) .*?width="16">.*?</a>.*?smileys/([1-9]).gif"'
+        aResult = cParser().parse(sHtmlContent.replace('\\',''), sPattern)
+        if (aResult[0] == True):
+            hosters = []
+            for aEntry in aResult[1]:
+                sHoster = aEntry[2].strip()
+                hoster = {}
+                hoster['name'] = sHoster
+                hoster['link'] = URL_MAIN +'/'+ aEntry[0]
+                hoster['displayedName'] = aEntry[1] + ' - ' + sHoster + ' - Quality: ' + aEntry[3]
+                hoster['quality'] = aEntry[3]
+                hoster['date'] = aEntry[1].strip()
+                hosters.append(hoster)
+            hosters.append('showHoster')
+            return hosters
+
+def showXXXHosters():
+    params = ParameterHandler()
+    if (params.exist('sUrl') and params.exist('sMovieTitle')):
+        sUrl = params.getValue('sUrl')
+        sMovieTitle = params.getValue('sMovieTitle')
+        print "########### xmovie"
         sHtmlContent = cRequestHandler(sUrl).request()
         sPattern = '<tr id="tablemoviesindex2">.*?<a href="([^"]+)">([^<]+)<.*?alt="(.*?) .*?width="16">.*?</a>.*?smileys/([1-9]).gif"'
         aResult = cParser().parse(sHtmlContent.replace('\\',''), sPattern)
