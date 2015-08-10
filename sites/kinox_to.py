@@ -373,7 +373,7 @@ def parseNews():
         oGui.setEndOfDirectory()
         return
     sPattern = '<td class="Icon"><img src="/gr/sys/lng/(\d+).png" alt="language" width="16" '+\
-    'height="11".*?<td class="Title">.*?href="([^\"]+)".*?class="OverlayLabel">([^<]+)<'+\
+    'height="11".*?<td class="Title.*?rel="([^"]+)"><a href="([^\"]+)".*?class="OverlayLabel">([^<]+)<'+\
     '(span class="EpisodeDescr">)?([^<]+)'
     oParser = cParser()
     aResult = oParser.parse(aResult[1][0], sPattern)
@@ -385,11 +385,11 @@ def parseNews():
     # Create an entry for every news line
     for aEntry in aResult[1]:
         sLang = __createLanguage(aEntry[0])
-        sTitle = cUtil().unescape(aEntry[2]).strip()
+        sTitle = cUtil().unescape(aEntry[3]).strip()
         if sTitle.endswith(':'):
             sTitle = sTitle[:-1]
         sTitle, subLang = __checkSubLanguage(sTitle)
-        sUrl = aEntry[1]
+        sUrl = aEntry[2]
         # If there are several urls, just pick the first one
         aUrl = sUrl.split(",")
         if len(aUrl) > 0:
@@ -397,6 +397,7 @@ def parseNews():
             oGuiElement = cGuiElement(sTitle, SITE_IDENTIFIER,'parseMovieEntrySite')
             oGuiElement.setLanguage(sLang)
             oGuiElement.setSubLanguage(subLang)
+            oGuiElement.setThumbnail(URL_MAIN + str(aEntry[1]))
 
             oParams.setParam('sUrl',URL_MAIN + sUrl)
             oParams.setParam('mediaType',mediaType)
@@ -533,6 +534,7 @@ def parseMovieEntrySite():
             oGui.setView('episodes')
             oGui.setEndOfDirectory()
         else:
+            logger.info('Movie')
             result = showHosters(sHtmlContent, sMovieTitle)
             return result    
 
@@ -773,18 +775,18 @@ def showHosters(sHtmlContent = '', sTitle = False):
         sTitle = oParams.getValue('title')
     if (oParams.exist('sUrl')):
         sUrl = oParams.getValue('sUrl')
-
+    
     sHtmlContent = __getHtmlContent(sUrl, sSecurityValue)
-
-    sPattern = '<li id="Hoster.*?rel="([^"]+)".*?<div class="Named">(.*?)</div>(.*?)</div></li>'
+    sPattern = 'class="MirBtn.*?rel="([^"]+)".*?class="Named">([^<]+)</div>(.*?)</div>'
     oParser = cParser()
     aResult = oParser.parse(sHtmlContent, sPattern)
     hosters = []
     if (aResult[0]):
         for aEntry in aResult[1]:
+            print aEntry
             sHoster = aEntry[1]
             # check for additional mirrors
-            sPattern = '<b>Mirror</b>: [1-9]/([1-9])<br />'
+            sPattern = '<b>Mirror</b>: [1-9]/([1-9])<br/>'
             oParser = cParser()
             aResult = oParser.parse(aEntry[2], sPattern)
             mirrors = 1
