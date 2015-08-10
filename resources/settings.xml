@@ -16,6 +16,7 @@
         <setting default="false" id="plugin_bundesliga_de" label="Bundesliga.de" type="bool" />
         <setting default="false" id="plugin_burning_series_org" label="Burning-Seri.es" type="bool" />
         <setting default="false" id="plugin_gstream_in" label="G-Stream.in" type="bool" />
+        <setting default="true" id="plugin_kinoleak" label="KinoLeak.tv" type="bool" />
         <setting default="false" id="plugin_kinox_to" label="Kinox.to" type="bool" />
         <setting default="kinox.to" enable="!eq(-1,false)" id="kinox_to-domain" label="Kinox domain" type="labelenum" values="kinox.to|kinox.me|kinox.tv" />
         <setting default="false" id="plugin_kkiste_to" label="KKiste.to" type="bool" />
