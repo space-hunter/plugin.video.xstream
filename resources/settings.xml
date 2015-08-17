@@ -22,6 +22,8 @@
         <setting default="false" id="plugin_kkiste_to" label="KKiste.to" type="bool" />
         <setting default="false" id="plugin_movie4k_to" label="Movie4k.to" type="bool" />
         <setting default="movie4k.to" enable="!eq(-1,false)" id="movie4k_to-domain" label="Movie4k domain" type="labelenum" values="movie4k.to|movie4k.me|movie4k.tv" />
+        <setting default="false" id="plugin_moviesever_com" label="MoviesEver.com" type="bool" />
+        <setting default="false" id="plugin_seriesever_net" label="SeriesEver.net" type="bool" />
         <setting type="sep" />
     </category>
     <category label="Views">
