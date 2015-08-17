@@ -16,6 +16,7 @@ URL_MAIN = 'http://moviesever.com/'
 
 SERIESEVER_IDENTIFIER = 'seriesever_net'
 
+
 def load():
     oParams = ParameterHandler()
 
@@ -34,6 +35,7 @@ def __isSeriesEverAvaiable():
             return True
 
     return False
+
 
 def __getHtmlContent(sUrl=None):
     oParams = ParameterHandler()
@@ -90,7 +92,8 @@ def showGenresMenu():
 
     oGui.setEndOfDirectory()
 
-def showMovies(sUrl = False, bShowAllPages = False):
+
+def showMovies(sUrl=False, bShowAllPages=False):
     logger.info('load showMovies')
     oParams = ParameterHandler()
 
@@ -133,16 +136,22 @@ def __getMovies(oGui, sHtmlContent):
     oParser = cParser()
     aResult = oParser.parse(sHtmlContent, sBlockPattern)
 
-
     if aResult[0]:
-        for link, tmp, img, title in aResult[1]:
-            guiElement = cGuiElement(title, SITE_IDENTIFIER, 'showHosters')
-            guiElement.setThumbnail(img)
-            oParams.addParams({'sUrl': link, 'Title': title})
+        for link, span, img, title in aResult[1]:
             # TODO: Looking for span isn't the best way, but the only difference I found
-            if "span" not in tmp:
-                oGui.addFolder(guiElement, oParams)
+            if "span" not in span:
+                url = __getSELink(link)
+
+                if url:
+                    guiElement = cGuiElement(title, SERIESEVER_IDENTIFIER, 'showMovie')
+                    guiElement.setThumbnail(img)
+                    oParams.addParams({'sUrl': url})
+                    oParams.delParam("playMode")
+                    oGui.addFolder(guiElement, oParams)
             else:
+                guiElement = cGuiElement(title, SITE_IDENTIFIER, 'showHosters')
+                guiElement.setThumbnail(img)
+                oParams.addParams({'sUrl': link, 'Title': title})
                 oGui.addFolder(guiElement, oParams, bIsFolder=False)
 
 
@@ -151,6 +160,21 @@ def __decode(text):
     text = text.replace('&#038;', '&')
     text = text.replace('&#8217;', '\'')
     return text
+
+
+def __getSELink(sUrl):
+    sPattern = '<a href="(http://seriesever.com/serien/.*?)" target="MoviesEver">'
+
+    # request
+    sHtmlContent = __getHtmlContent(sUrl)
+    # parse content
+    oParser = cParser()
+    aResult = oParser.parse(sHtmlContent, sPattern)
+
+    if aResult[0]:
+        return aResult[1][0]
+
+    return False
 
 
 def showHosters():
@@ -168,10 +192,6 @@ def showHosters():
 
     hosters = getHoster(sHtmlContent, hosters)
 
-    if hosters[0]['name'] == 'seriesever':
-        addSeriesEverLink(hosters[0])
-        return
-
     if aResult[0]:
         for link in aResult[1]:
             sHtmlContentTmp = __getHtmlContent(link)
@@ -183,34 +203,13 @@ def showHosters():
     return hosters
 
 
-def addSeriesEverLink(hoster):
-    oParams = ParameterHandler()
-    oGui = cGui()
-
-    guiElement = cGuiElement(hoster['displayedName'], SERIESEVER_IDENTIFIER, 'showMovie')
-    oParams.addParams({'sUrl': hoster['link']})
-    oGui.addFolder(guiElement, oParams)
-
-    oGui.setEndOfDirectory()
-
 def getHoster(sHtmlContent, hosters):
     sPattern = '<p><iframe src="(.*?)"'
-    sSEPattern = '<a href="(http://seriesever.com/serien/.*?)" target="MoviesEver">'
 
     # parse content
     oParser = cParser()
 
     aResult = oParser.parse(sHtmlContent, sPattern)
-    aSEResult = oParser.parse(sHtmlContent, sSEPattern)
-
-    if aSEResult[0]:
-        hoster = dict()
-
-        hoster['link'] = aSEResult[1][0]
-        hoster['name'] = 'seriesever'
-        hoster['displayedName'] = 'Gehe zu SeriesEver'
-
-        hosters.append(hoster)
 
     if aResult[0]:
         hoster = dict()

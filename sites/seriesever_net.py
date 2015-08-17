@@ -214,8 +214,6 @@ def showMovie():
     oParser = cParser()
     aResult = oParser.parse(sHtmlContent, sPattern)
 
-    logger.info(sHtmlContent)
-
     oGui = cGui()
     if (aResult[0] == True):
         for img, eNr, link, title in aResult[1]:
