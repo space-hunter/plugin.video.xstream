@@ -140,14 +140,15 @@ def __getMovies(oGui, sHtmlContent):
         for link, span, img, title in aResult[1]:
             # TODO: Looking for span isn't the best way, but the only difference I found
             if "span" not in span:
-                url = __getSELink(link)
+                if __isSeriesEverAvaiable():
+                    url = __getSELink(link)
 
-                if url:
-                    guiElement = cGuiElement(title, SERIESEVER_IDENTIFIER, 'showMovie')
-                    guiElement.setThumbnail(img)
-                    oParams.addParams({'sUrl': url})
-                    oParams.delParam("playMode")
-                    oGui.addFolder(guiElement, oParams)
+                    if url:
+                        guiElement = cGuiElement(title, SERIESEVER_IDENTIFIER, 'showMovie')
+                        guiElement.setThumbnail(img)
+                        oParams.addParams({'sUrl': url})
+                        oParams.delParam("playMode")
+                        oGui.addFolder(guiElement, oParams)
             else:
                 guiElement = cGuiElement(title, SITE_IDENTIFIER, 'showHosters')
                 guiElement.setThumbnail(img)
