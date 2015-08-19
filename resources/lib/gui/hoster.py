@@ -220,19 +220,33 @@ class cHosterGui:
         Sort hosters based on their resolvers priority.
         '''
         import urlresolver
-        urlresolver.lazy_plugin_scan()
+        #          
         ranking = []
+        '''
+        # multi hosters won't be handled correctly
+        urlresolver.lazy_plugin_scan() 
+        hosters = {}
+        for imp in urlresolver.UrlResolver.implementors():
+            prio = imp.priority
+            for name in imp.domains:
+                hosters[name.split(',')[0]] = prio
         for hoster in hosterList:
-            #if not self.checkForResolver(hoster['name']):
-            #    continue        
-            found = False
-            for imp in urlresolver.UrlResolver.implementors():
-                if imp.valid_url('dummy',hoster['name'].lower()):
-                        ranking.append([imp.priority,hoster])
-                        found = True
-                        break
-            if not found and not filter:
+            name = hoster['name'].lower()
+            if name in hosters:
+                ranking.append([hosters[name],hoster])
+            elif not filter:
                 ranking.append([999,hoster])
+        '''
+
+        #handles multihosters but is about 10 times slower
+        for hoster in hosterList:
+            source = urlresolver.HostedMediaFile(host=hoster['name'].lower(), media_id='dummy')
+            if source:
+                for resolver in source._HostedMediaFile__resolvers:
+                    ranking.append([resolver.priority,hoster])
+            elif not filter:
+                ranking.append([999,hoster])
+
         ranking.sort()
         hosterQueue = []
         for i,hoster in ranking:
