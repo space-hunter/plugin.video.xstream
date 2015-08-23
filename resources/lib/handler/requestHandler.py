@@ -24,6 +24,8 @@ class cRequestHandler:
         self.__aHeaderEntries = []
         self.__cachePath = ''
         self._cookiePath = ''
+        self.ignoreDiscard(False)
+        self.ignoreExpired(False)
         self.caching = caching
         self.ignoreErrors = ignoreErrors
         self.cacheTime = int(cConfig().getSetting('cacheTime'))
@@ -76,7 +78,7 @@ class cRequestHandler:
     def __callRequest(self):
         cookieJar = mechanize.LWPCookieJar()
         try: #TODO ohne try evtl.
-            cookieJar.load(self._cookiePath)
+            cookieJar.load(self._cookiePath, self.__bIgnoreDiscard, self.__bIgnoreExpired)
         except Exception as e:
             logger.info(e)
         sParameters = urllib.urlencode(self.__aParameters)
@@ -119,11 +121,11 @@ class cRequestHandler:
         #except:
             #oResponse = mechanize.urlopen(oRequest)
         try:
-            cookieJar.load(self._cookiePath)
+            cookieJar.load(self._cookiePath, self.__bIgnoreDiscard, self.__bIgnoreExpired)
         except Exception as e:
             logger.info(e)
         cookieJar.extract_cookies(oResponse, oRequest)
-        cookieJar.save(self._cookiePath)
+        cookieJar.save(self._cookiePath, self.__bIgnoreDiscard, self.__bIgnoreExpired)
         sContent = oResponse.read()
         self.__sResponseHeader = oResponse.info()
         # handle gzipped content
@@ -163,6 +165,12 @@ class cRequestHandler:
             file = open(cookieFile, 'w')
             file.close()
         self._cookiePath = cookieFile
+
+    def ignoreDiscard(self, bIgnoreDiscard):
+        self.__bIgnoreDiscard = bIgnoreDiscard
+
+    def ignoreExpired(self, bIgnoreExpired):
+        self.__bIgnoreExpired = bIgnoreExpired
 
     ###Caching
     def setCachePath(self, cache=''):

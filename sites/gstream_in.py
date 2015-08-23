@@ -7,21 +7,29 @@ from resources.lib.parser import cParser
 from resources.lib.config import cConfig
 from resources.lib import logger
 from resources.lib.handler.ParameterHandler import ParameterHandler
+import hashlib
 
 SITE_IDENTIFIER = 'gstream_in'
 SITE_NAME = 'G-Stream'
 SITE_ICON = 'gstream.png'
 
 URL_MAIN = 'http://gstream.to'
+URL_LOGIN = URL_MAIN + '/login.php'
 URL_SHOW_MOVIE = 'http://gstream.to/showthread.php?t='
 URL_CATEGORIES = 'http://gstream.to/forumdisplay.php?f='
 URL_SEARCH = 'http://gstream.to/search.php'
+
+oConfig = cConfig()
+username = oConfig.getSetting('gstream_in-username')
+password = oConfig.getSetting('gstream_in-password')
 
 
 def load():
     oGui = cGui()
 
     sSecurityValue = __getSecurityCookieValue()
+
+    __login()
 
     __createMainMenuEntry(oGui, 'Aktuelle KinoFilme', 542, sSecurityValue)
     oGui.addFolder(cGuiElement('HD Filme',SITE_IDENTIFIER,'showHDMovies'))
@@ -60,6 +68,21 @@ def load():
     
     oGui.setEndOfDirectory()
 
+
+def __login():
+    hPassword = hashlib.md5(password).hexdigest()
+
+    oRequest = cRequestHandler(URL_LOGIN)
+    oRequest.addParameters('vb_login_username', username)
+    oRequest.addParameters('vb_login_password', '')
+    oRequest.addParameters('s', '')
+    oRequest.addParameters('do', 'login')
+    oRequest.addParameters('vb_login_md5password', hPassword)
+    oRequest.addParameters('vb_login_md5password_utf', hPassword)
+    oRequest.ignoreDiscard(True)
+    oRequest.request()
+
+
 def __createMainMenuEntry(oGui, sMenuName, iCategoryId, sSecurityValue=''):
     oGuiElement = cGuiElement()
     oGuiElement.setSiteName(SITE_IDENTIFIER)
@@ -74,6 +97,7 @@ def __createMainMenuEntry(oGui, sMenuName, iCategoryId, sSecurityValue=''):
     
 def __getSecurityCookieValue():
     oRequest = cRequestHandler(URL_MAIN, False, True)
+    oRequest.ignoreDiscard(True)
     sHtmlContent = oRequest.request()
     header = oRequest.getResponseHeader()
 
@@ -106,6 +130,7 @@ def __getSecurityCookieValue():
     oRequest.addHeaderEntry('Referer', URL_MAIN)
     oRequest.addHeaderEntry('Connection', 'keep-alive')
     oRequest.addHeaderEntry('DNT', '1')
+    oRequest.ignoreDiscard(True)
     sHtmlContent = oRequest.request()
     return True 
 
@@ -132,6 +157,7 @@ def __getHtmlContent(sUrl = None, sSecurityValue=None):
     #oRequest.addHeaderEntry('Cookie', sSecurityValue)
     #oRequest.addHeaderEntry('Accept', '*/*')
     #oRequest.addHeaderEntry('Host', 'gstream.to')
+    oRequest.ignoreDiscard(True)
 
     return oRequest.request()
     
@@ -170,6 +196,7 @@ def showHDMovies():
     oGui = cGui()
     sUrl = 'http://gstream.to/search.php?do=process&prefixchoice[]=hd'
     oRequest = cRequestHandler(sUrl, caching = False)
+    oRequest.ignoreDiscard(True)
     oRequest.request()
     sUrl = oRequest.getRealUrl()
     __parseMovieResultSite(oGui, sUrl)
@@ -192,6 +219,7 @@ def _search(oGui, sSearchText):
     sUrl = URL_SEARCH+'?do=process&childforums=1&do=process&exactname=1&forumchoice[]='+sSearchType+\
         '&query=' + str(sSearchText) + '&quicksearch=1&s=&securitytoken=guest&titleonly=1'
     oRequest = cRequestHandler(sUrl, caching = False)
+    oRequest.ignoreDiscard(True)
     oRequest.request()
     sUrl = oRequest.getRealUrl()
     __parseMovieResultSite(oGui, sUrl)
@@ -340,6 +368,7 @@ def getHosterUrl(sUrl = False):
         oRequest = cRequestHandler(sUrl, False)
         oRequest.addHeaderEntry('Cookie', params.getValue('securityCookie'))
         oRequest.addHeaderEntry('Referer', params.getValue('movieUrl'))
+        oRequest.ignoreDiscard(True)
         try:
             oRequest.request()
             sUrl = oRequest.getRealUrl()
