@@ -16,11 +16,16 @@
         <setting default="false" id="plugin_bundesliga_de" label="Bundesliga.de" type="bool" />
         <setting default="false" id="plugin_burning_series_org" label="Burning-Seri.es" type="bool" />
         <setting default="false" id="plugin_gstream_in" label="G-Stream.in" type="bool" />
+        <setting default="" id="gstream_in-username" label="Benutzername" type="text" />
+        <setting default="" id="gstream_in-password" label="Passwort" type="text" option="hidden" />
+        <setting default="true" id="plugin_kinoleak" label="KinoLeak.tv" type="bool" />
         <setting default="false" id="plugin_kinox_to" label="Kinox.to" type="bool" />
         <setting default="kinox.to" enable="!eq(-1,false)" id="kinox_to-domain" label="Kinox domain" type="labelenum" values="kinox.to|kinox.me|kinox.tv" />
         <setting default="false" id="plugin_kkiste_to" label="KKiste.to" type="bool" />
         <setting default="false" id="plugin_movie4k_to" label="Movie4k.to" type="bool" />
         <setting default="movie4k.to" enable="!eq(-1,false)" id="movie4k_to-domain" label="Movie4k domain" type="labelenum" values="movie4k.to|movie4k.me|movie4k.tv" />
+        <setting default="false" id="plugin_moviesever_com" label="MoviesEver.com" type="bool" />
+        <setting default="false" id="plugin_seriesever_net" label="SeriesEver.net" type="bool" />
         <setting type="sep" />
     </category>
     <category label="Views">
