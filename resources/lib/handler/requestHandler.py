@@ -1,5 +1,6 @@
 #!/usr/bin/env python2.7
 import os
+import sys
 import urllib
 import httplib
 import mechanize
@@ -125,6 +126,9 @@ class cRequestHandler:
         except Exception as e:
             logger.info(e)
         cookieJar.extract_cookies(oResponse, oRequest)
+
+        cookieJar = self.__checkCookie(cookieJar)
+
         cookieJar.save(self._cookiePath, self.__bIgnoreDiscard, self.__bIgnoreExpired)
         sContent = oResponse.read()
         self.__sResponseHeader = oResponse.info()
@@ -153,6 +157,13 @@ class cRequestHandler:
             self.writeCache(self.getRequestUri(), sContent)
 
         return sContent
+
+    def __checkCookie(self, cookieJar):
+        for entry in cookieJar:
+            if entry.expires > sys.maxint:
+                entry.expires = sys.maxint
+
+        return cookieJar
 
     def getHeaderLocationUrl(self):        
         opened = mechanize.urlopen(self.__sUrl)
