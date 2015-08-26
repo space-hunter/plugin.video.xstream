@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import urllib
-import logger
 from resources.lib.gui.gui import cGui
 from resources.lib.gui.guiElement import cGuiElement
 from resources.lib.handler.requestHandler import cRequestHandler
 from resources.lib.parser import cParser
 from resources.lib.util import cUtil
 from resources.lib.config import cConfig
+from resources.lib import logger
 from json import loads
 import re
 from resources.lib.handler.ParameterHandler import ParameterHandler
@@ -366,7 +366,6 @@ def parseNews():
     +'</h1></div>(.*?)<div class="ModuleFooter">' 
     sHtmlContent = __getHtmlContent(sUrl = sUrl, sSecurityValue = sSecurityValue)   
     aResult = oParser.parse(sHtmlContent, sPattern)
-    oGui = cGui()
     
     if not aResult[0]:
         logger.info("Can't get any news")
@@ -375,7 +374,7 @@ def parseNews():
     sPattern = '<td class="Icon"><img src="/gr/sys/lng/(\d+).png" alt="language" width="16" '+\
     'height="11".*?<td class="Title.*?rel="([^"]+)"><a href="([^\"]+)".*?class="OverlayLabel">([^<]+)<'+\
     '(span class="EpisodeDescr">)?([^<]+)'
-    oParser = cParser()
+
     aResult = oParser.parse(aResult[1][0], sPattern)
     if not aResult[0]:
         logger.info("Can't get any news")
@@ -783,7 +782,6 @@ def showHosters(sHtmlContent = '', sTitle = False):
     hosters = []
     if (aResult[0]):
         for aEntry in aResult[1]:
-            print aEntry
             sHoster = aEntry[1]
             # check for additional mirrors
             sPattern = '<b>Mirror</b>: [1-9]/([1-9])<br/>'
@@ -857,7 +855,6 @@ def getHosterUrlandPlay(sUrl = False):
         result['streamUrl'] = sPartUrl
         result['resolved'] = False
         results.append(result)
-  print results
   return results
 
   
