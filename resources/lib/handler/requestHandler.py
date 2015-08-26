@@ -118,13 +118,7 @@ class cRequestHandler:
             xbmcgui.Dialog().ok('xStream', str(e))
             logger.error("HTTPException "+str(e)+" Url: "+self.__sUrl)
             return ''
-        #except Exception:
-        #except:
-            #oResponse = mechanize.urlopen(oRequest)
-        try:
-            cookieJar.load(self._cookiePath, self.__bIgnoreDiscard, self.__bIgnoreExpired)
-        except Exception as e:
-            logger.info(e)
+
         cookieJar.extract_cookies(oResponse, oRequest)
 
         cookieJar = self.__checkCookie(cookieJar)
