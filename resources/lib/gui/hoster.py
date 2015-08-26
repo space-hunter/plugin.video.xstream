@@ -242,8 +242,15 @@ class cHosterGui:
         for hoster in hosterList:
             source = urlresolver.HostedMediaFile(host=hoster['name'].lower(), media_id='dummy')
             if source:
+                priority = False
                 for resolver in source._HostedMediaFile__resolvers:
-                    ranking.append([resolver.priority,hoster])
+                    if resolver.domains[0] != '*':
+                        priority = resolver.priority
+                        break
+                    if not priority:
+                        priority = resolver.priority                        
+                if priority:
+                    ranking.append([priority,hoster])
             elif not filter:
                 ranking.append([999,hoster])
 
