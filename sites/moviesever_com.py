@@ -6,6 +6,7 @@ from resources.lib.parser import cParser
 from resources.lib import logger
 from resources.lib.handler.ParameterHandler import ParameterHandler
 from resources.lib.handler.pluginHandler import cPluginHandler
+from resources.lib.util import cUtil
 import re
 
 SITE_IDENTIFIER = 'moviesever_com'
@@ -86,7 +87,7 @@ def showGenresMenu():
     if aResult[0]:
         for link, title in aResult[1]:
             guiElement = cGuiElement(title, SITE_IDENTIFIER, 'showMovies')
-            guiElement.setMediaType('fGenre')
+            #guiElement.setMediaType('fGenre') # not necessary
             oParams.addParams({'sUrl': link, 'bShowAllPages': True})
             oGui.addFolder(guiElement, oParams)
 
@@ -117,27 +118,26 @@ def showMovies(sUrl=False, bShowAllPages=False):
         pages = aPages[1][-1]
 
     oGui = cGui()
-
+    
     for x in range(1, int(pages) + 1):
         sHtmlContentPage = __getHtmlContent('%spage/%s/' % (sUrl, str(x)))
         __getMovies(oGui, sHtmlContentPage)
-
+    
+    oGui.setView('movies')
     oGui.setEndOfDirectory()
 
 
 def __getMovies(oGui, sHtmlContent):
     oParams = ParameterHandler()
-
     sBlockPattern = '<div class="moviefilm">.*?href="(.*?)"(.*?)src="(.*?)".*?alt="(.*?)"'
 
-    # TODO: Add proper decoding (.decode) doesn't work
-    sHtmlContent = __decode(sHtmlContent)
     # parse content
     oParser = cParser()
     aResult = oParser.parse(sHtmlContent, sBlockPattern)
-
+    unescape = cUtil().unescape
     if aResult[0]:
         for link, span, img, title in aResult[1]:
+            title = unescape(title.decode('utf-8')).encode('utf-8')
             # TODO: Looking for span isn't the best way, but the only difference I found
             if "span" not in span:
                 if __isSeriesEverAvaiable():
@@ -145,9 +145,9 @@ def __getMovies(oGui, sHtmlContent):
 
                     if url:
                         guiElement = cGuiElement(title, SERIESEVER_IDENTIFIER, 'showMovie')
+                        guiElement.setMediaType('movie')
                         guiElement.setThumbnail(img)
                         oParams.addParams({'sUrl': url})
-                        oParams.delParam("playMode")
                         oGui.addFolder(guiElement, oParams)
             else:
                 guiElement = cGuiElement(title, SITE_IDENTIFIER, 'showHosters')
