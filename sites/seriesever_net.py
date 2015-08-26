@@ -111,7 +111,7 @@ def showGenresMenu():
     if (aResult[0] == True):
         for aEntry in aResult[1]:
             guiElement = cGuiElement(aEntry[1], SITE_IDENTIFIER, 'showSeries')
-            guiElement.setMediaType('fGenre')
+            #guiElement.setMediaType('fGenre') #not necessary
             oParams.addParams({'sUrl': URL_GENRE + aEntry[0] + '/', 'iPage': 1})
             oGui.addFolder(guiElement, oParams)
 
@@ -293,7 +293,7 @@ def showHosters():
         try:
             domain_list = __get_domain_list(app, domain_list)
         except:
-            pass
+            logger.info('Could not get domain list')
         if not domain_list:
             domain_list = ['se1.seriesever.net', 'se2.seriesever.net']
         import random
@@ -316,7 +316,7 @@ def showHosters():
         hosters.sort()
 
     except Exception, e:
-        print e
+        logger.error(e)
     if hosters:
         hosters.append('getHosterUrl')
 
@@ -340,8 +340,8 @@ def parseHosterResponse(json_data, hosters):
             try:
                 hname = re.compile('^(?:https?:\/\/)?(?:[^@\n]+@)?([^:\/\n]+)', flags=re.I | re.M).findall(
                     hoster['link'])
-            except:
-                pass
+            except Exception, e:
+                logger.error(e)
 
             hoster['name'] = hname[0]
             hoster['displayedName'] = hname[0]
