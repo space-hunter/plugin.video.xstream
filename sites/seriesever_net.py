@@ -29,6 +29,7 @@ def load():
 
     oGui = cGui()
     oParams.setParam('mediaType', 'series')
+    oGui.addFolder(cGuiElement('Neue Episoden', SITE_IDENTIFIER, 'showNewEpisodesMenu'), oParams)
     oGui.addFolder(cGuiElement('Serien', SITE_IDENTIFIER, 'showSeriesMenu'), oParams)
     oGui.addFolder(cGuiElement('Animes', SITE_IDENTIFIER, 'showAnimesMenu'), oParams)
     oGui.addFolder(cGuiElement('Filme', SITE_IDENTIFIER, 'showMoviesMenu'), oParams)
@@ -54,19 +55,24 @@ def __getHtmlContent(sUrl=None):
     return oRequest.request()
 
 
+def showNewEpisodesMenu():
+    logger.info('load showNewEpisodesMenu')
+    showFrontPage()
+
+
 def showSeriesMenu():
     logger.info('load showSeriesMenu')
-    showSeries(URL_SERIES, 1)
+    showSeries(URL_SERIES)
 
 
 def showAnimesMenu():
     logger.info('load showAnimesMenu')
-    showSeries(URL_ANIMES, 1)
+    showSeries(URL_ANIMES)
 
 
 def showMoviesMenu():
     logger.info('load showMoviesMenu')
-    showSeries(URL_MOVIES, 1)
+    showSeries(URL_MOVIES)
 
 
 def showSearch():
@@ -86,14 +92,15 @@ def _search(oGui, sSearchText):
     oRequestHandler.addHeaderEntry('X-Requested-With', 'XMLHttpRequest')
     sHtmlContent = oRequestHandler.request()
     series = json.loads(sHtmlContent)
-    total = len(series)
 
-    for serie in series:
-        sTitle = serie["name"].encode('utf-8')
-        guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
-        guiElement.setMediaType('tvshow')
-        params.addParams({'sUrl': serie['url'], 'Title': sTitle})
-        oGui.addFolder(guiElement, params, iTotal=total)
+    if series:
+        total = len(series)
+        for serie in series:
+            sTitle = serie["name"].encode('utf-8')
+            guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
+            guiElement.setMediaType('tvshow')
+            params.addParams({'sUrl': serie['url'], 'Title': sTitle})
+            oGui.addFolder(guiElement, params, iTotal=total)
 
 
 def showGenresMenu():
@@ -118,28 +125,26 @@ def showGenresMenu():
     oGui.setEndOfDirectory()
 
 
-def showSeries(sUrl=False, iPage=False):
+def showSeries(sUrl=False):
     logger.info('load showSeries')
     oParams = ParameterHandler()
 
     if not sUrl:
         sUrl = oParams.getValue('sUrl')
 
-    if not iPage:
-        iPage = oParams.getValue('iPage')
-
     sPagePattern = '<a href="' + sUrl + '(.*?).html">'
 
     # request
-    sHtmlContent = __getHtmlContent(sUrl + str(iPage))
+    sHtmlContent = __getHtmlContent(sUrl)
     # parse content
     oParser = cParser()
     aResult = oParser.parse(sHtmlContent, sPagePattern)
 
     pages = 1
 
-    if (aResult[0] == True):
-        pages = aResult[1][-1][0];
+    if aResult[0]:
+        if RepresentsInt(aResult[1][-1][0]):
+            pages = aResult[1][-1][0]
 
     oGui = cGui()
 
@@ -153,12 +158,47 @@ def showSeries(sUrl=False, iPage=False):
     oGui.setEndOfDirectory()
 
 
+def showFrontPage():
+    oParams = ParameterHandler()
+    sPattern = '<div class="box-container">.*?<a href="(.*?)".*?Staffel (.*?) Episode (.*?)".*?src="(http://seriesever.net/uploads/posters/thumb/.*?)".*?alt="(.*?)"'
+
+    # request
+    sHtmlContent = __getHtmlContent(URL_MAIN)
+    # parse content
+    oParser = cParser()
+    aResult = oParser.parse(sHtmlContent, sPattern)
+
+    oGui = cGui()
+    if (aResult[0] == True):
+        for link, season, episode, img, title in aResult[1]:
+            guiElement = cGuiElement('%s: Season %s - Episode %s' % (title, season, episode), SITE_IDENTIFIER, 'showHosters')
+            guiElement.setMediaType('episode')
+            guiElement.setSeason(season)
+
+            # Special fix for non-int episode numbers (like Attack on Titan 13.5)
+            # Can't even check this on thetvdb.com, because AOT 13.5 for example is Season 0 Episode 1
+            # May I can use "<airsbefore_episode>" and "<airsbefore_season>" for metadata
+            if RepresentsInt(episode):
+                guiElement.setEpisode(episode)
+
+            guiElement.setTVShowTitle(title)
+            guiElement.setThumbnail(img)
+
+            oParams.setParam('sUrl', link)
+            oGui.addFolder(guiElement, oParams, bIsFolder=False)
+
+    oGui.setView('episodes')
+    oGui.setEndOfDirectory()
+
 def showSeriesPage(oGui, sUrl, iPage, dupeCheck):
     oParams = ParameterHandler()
     sPattern = '<div class="box-container">.*?<a href="(.*?)".*?src="(.*?)".*?alt="(.*?)"'
 
     # request
-    sHtmlContent = __getHtmlContent(sUrl + str(iPage))
+    if int(iPage) == 1:
+        sHtmlContent = __getHtmlContent(sUrl)
+    else:
+        sHtmlContent = __getHtmlContent(sUrl + str(iPage))
     # parse content
     oParser = cParser()
     aResult = oParser.parse(sHtmlContent, sPattern)
