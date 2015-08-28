@@ -105,7 +105,7 @@ def showGenresMenu():
     oGui.setEndOfDirectory()
 
 
-def showMovies(oGui, sUrl=False, bShowAllPages=False):
+def showMovies(oGui = False, sUrl=False, bShowAllPages=False):
     logger.info('load showMovies')
     oParams = ParameterHandler()
 
@@ -128,6 +128,12 @@ def showMovies(oGui, sUrl=False, bShowAllPages=False):
     if aPages[0] and bShowAllPages:
         pages = aPages[1][-1]
 
+    bInternGui = False
+
+    if not oGui:
+        bInternGui = True
+        oGui = cGui()
+
     sHtmlContentPage = __getHtmlContent(sUrl)
     __getMovies(oGui, sHtmlContentPage)
 
@@ -135,6 +141,10 @@ def showMovies(oGui, sUrl=False, bShowAllPages=False):
         for x in range(2, int(pages) + 1):
             sHtmlContentPage = __getHtmlContent('%spage/%s/' % (sUrl, str(x)))
             __getMovies(oGui, sHtmlContentPage)
+
+    if bInternGui:
+        oGui.setView('movies')
+        oGui.setEndOfDirectory()
 
 
 def __getMovies(oGui, sHtmlContent):
