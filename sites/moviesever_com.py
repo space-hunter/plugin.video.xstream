@@ -56,7 +56,12 @@ def __getHtmlContent(sUrl=None):
 
 
 def showNewMovies():
-    showMovies(URL_MAIN, False)
+    oGui = cGui()
+
+    showMovies(oGui, URL_MAIN, False)
+
+    oGui.setView('movies')
+    oGui.setEndOfDirectory()
 
 
 def showSearch():
@@ -65,10 +70,16 @@ def showSearch():
 
     sSearchText = oGui.showKeyBoard()
     if (sSearchText != False and sSearchText != ''):
-        showMovies(URL_MAIN + '?s=' + sSearchText, True)
+        _search(oGui, sSearchText)
     else:
         return
+
+    oGui.setView('movies')
     oGui.setEndOfDirectory()
+
+
+def _search(oGui, sSearchText):
+    showMovies(oGui, URL_MAIN + '?s=' + sSearchText, True)
 
 
 def showGenresMenu():
@@ -94,7 +105,7 @@ def showGenresMenu():
     oGui.setEndOfDirectory()
 
 
-def showMovies(sUrl=False, bShowAllPages=False):
+def showMovies(oGui = False, sUrl=False, bShowAllPages=False):
     logger.info('load showMovies')
     oParams = ParameterHandler()
 
@@ -117,14 +128,23 @@ def showMovies(sUrl=False, bShowAllPages=False):
     if aPages[0] and bShowAllPages:
         pages = aPages[1][-1]
 
-    oGui = cGui()
-    
-    for x in range(1, int(pages) + 1):
-        sHtmlContentPage = __getHtmlContent('%spage/%s/' % (sUrl, str(x)))
-        __getMovies(oGui, sHtmlContentPage)
-    
-    oGui.setView('movies')
-    oGui.setEndOfDirectory()
+    bInternGui = False
+
+    if not oGui:
+        bInternGui = True
+        oGui = cGui()
+
+    sHtmlContentPage = __getHtmlContent(sUrl)
+    __getMovies(oGui, sHtmlContentPage)
+
+    if int(pages) > 1:
+        for x in range(2, int(pages) + 1):
+            sHtmlContentPage = __getHtmlContent('%spage/%s/' % (sUrl, str(x)))
+            __getMovies(oGui, sHtmlContentPage)
+
+    if bInternGui:
+        oGui.setView('movies')
+        oGui.setEndOfDirectory()
 
 
 def __getMovies(oGui, sHtmlContent):
@@ -151,6 +171,7 @@ def __getMovies(oGui, sHtmlContent):
                         oGui.addFolder(guiElement, oParams)
             else:
                 guiElement = cGuiElement(title, SITE_IDENTIFIER, 'showHosters')
+                guiElement.setMediaType('movie')
                 guiElement.setThumbnail(img)
                 oParams.addParams({'sUrl': link, 'Title': title})
                 oGui.addFolder(guiElement, oParams, bIsFolder=False)
