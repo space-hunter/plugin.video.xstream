@@ -390,7 +390,7 @@ def __parseMovieSimpleList(sUrl, iPage, oGui, sHtmlContent = False):
             newUrl = aEntry[0].strip()
             if not (newUrl.startswith('http')):
                 newUrl = URL_MAIN +'/'+ newUrl
-            sMovieTitle = cUtil().unescape(aEntry[1].strip())
+            sMovieTitle = cUtil().unescape(aEntry[1].strip().decode('utf-8')).encode('utf-8')
             sMovieTitle = ' '.join(sMovieTitle.split())
             sMovieTitle = ' '.join(sMovieTitle.split())
             sLanguageToken = aEntry[2]
