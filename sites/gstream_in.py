@@ -23,7 +23,6 @@ oConfig = cConfig()
 username = oConfig.getSetting('gstream_in-username')
 password = oConfig.getSetting('gstream_in-password')
 
-
 def load():
     oGui = cGui()
 
@@ -81,6 +80,14 @@ def __login():
     oRequest.addParameters('vb_login_md5password_utf', hPassword)
     oRequest.ignoreDiscard(True)
     oRequest.request()
+
+    # needed to add this, so other sites doesn't delete the cookie in global search
+    # alternatively we could call login in showHoster, but this would generate more login requests...
+    cookie = oRequest.getCookie("bbsessionhash")
+
+    if cookie:
+        cookie.discard = False
+        oRequest.setCookie(cookie)
 
 
 def __createMainMenuEntry(oGui, sMenuName, iCategoryId, sSecurityValue=''):
@@ -212,6 +219,7 @@ def displaySearch():
     oGui.setEndOfDirectory()
 
 def _search(oGui, sSearchText):
+    __login()
     params = ParameterHandler()
     sSearchType = params.getValue('searchType')
     if not sSearchType:

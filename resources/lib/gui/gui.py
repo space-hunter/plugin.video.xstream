@@ -51,6 +51,9 @@ class cGui:
         '''
         add GuiElement to Gui, adds listitem to a list
         '''
+        if xbmc.abortRequested:
+            self.setEndOfDirectory(False)
+            raise Exception('UserAborted')
         if not oGuiElement._isMetaSet and self.isMetaOn and oGuiElement._mediaType:
             imdbID = oOutputParameterHandler.getValue('imdbID')
             if imdbID:
@@ -211,11 +214,10 @@ class cGui:
             oOutputParameterHandler.setParam('TVShowTitle',itemValues['TVShowTitle'])
         if 'season' in itemValues and itemValues['season'] and int(itemValues['season'])>0:
             oOutputParameterHandler.setParam('season',itemValues['season'])
-        if 'episode' in itemValues and itemValues['episode'] and int(itemValues['episode'])>0:
+        if 'episode' in itemValues and itemValues['episode'] and float(itemValues['episode'])>0:
             oOutputParameterHandler.setParam('episode',itemValues['episode'])
-        #TODO change this, it can cause bugs
+        #TODO change this, it can cause bugs it influencec the params for the following listitems
         if not bIsFolder:
-            oOutputParameterHandler.setParam('playMode','play')
             oOutputParameterHandler.setParam('MovieTitle',oGuiElement.getTitle())
             
             thumbnail = oGuiElement.getThumbnail()
@@ -228,7 +230,7 @@ class cGui:
                 oOutputParameterHandler.setParam('mediaType','tvshow')
             if 'season' in itemValues and itemValues['season'] and int(itemValues['season'])>0:
                 oOutputParameterHandler.setParam('mediaType','season')
-            if 'episode' in itemValues and itemValues['episode'] and int(itemValues['episode'])>0:
+            if 'episode' in itemValues and itemValues['episode'] and float(itemValues['episode'])>0:
                 oOutputParameterHandler.setParam('mediaType','episode')
                                              
         sParams = oOutputParameterHandler.getParameterAsUri()
@@ -236,6 +238,8 @@ class cGui:
             sItemUrl = "%s?site=%s&title=%s&%s" % (self.pluginPath, oGuiElement.getSiteName(), urllib.quote_plus(oGuiElement.getTitle()), sParams)
         else:
             sItemUrl = "%s?site=%s&function=%s&title=%s&%s" % (self.pluginPath, oGuiElement.getSiteName(), oGuiElement.getFunction(), urllib.quote_plus(oGuiElement.getTitle()), sParams)
+            if not bIsFolder:
+                sItemUrl += '&playMode=play'
         return sItemUrl       
 
     def showKeyBoard(self, sDefaultText = ""):

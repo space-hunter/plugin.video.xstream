@@ -9,6 +9,7 @@ from resources.lib.config import cConfig
 from resources.lib import logger
 import string
 import json
+from resources.lib.bs_finalizer import BsTokenGenererator as BSfinal
 
     
 # Variablen definieren die "global" verwendet werden sollen
@@ -16,8 +17,7 @@ SITE_IDENTIFIER = 'burning_series_org'
 SITE_NAME = 'Burning-Series'
 SITE_ICON = 'burning_series.jpg'
 
-URL_MAIN = 'http://www.bs.to'
-URL_SERIES = 'http://www.bs.to/api/series'
+URL_MAIN = 'http://www.bs.to/api/'
 URL_COVER = 'http://s.bs.to/img/cover/%s.jpg|encoding=gzip'
 
 # Hauptmenu erstellen
@@ -31,6 +31,13 @@ def load():
     oGui.addFolder(cGuiElement('Suche', SITE_IDENTIFIER, 'showSearch'))
     # Ende des Menus    
     oGui.setEndOfDirectory()
+
+def _getContent(urlPart): 
+    sUrl = URL_MAIN + urlPart
+    request = cRequestHandler(sUrl)
+    BSfinal().mod_request(request,urlPart)
+    return request.request()
+
  
 
 def showSearch():
@@ -42,11 +49,9 @@ def showSearch():
         return
     oGui.setEndOfDirectory()
 
-def _search(oGui, sSearchText):
-    sUrl = URL_SERIES
-    oRequestHandler = cRequestHandler(sUrl)
+def _search(oGui, sSearchText):    
     params = ParameterHandler()
-    sHtmlContent = oRequestHandler.request()
+    sHtmlContent = _getContent("series")
     series = json.loads(sHtmlContent)
     total = len(series)
     sSearchText = sSearchText.lower()
@@ -56,7 +61,7 @@ def _search(oGui, sSearchText):
             guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
             guiElement.setMediaType('tvshow')
             guiElement.setThumbnail(URL_COVER % serie["id"])        
-            params.addParams({'siteUrl' : URL_SERIES + '/' + str(serie["id"]), 'Title' : sTitle})
+            params.addParams({'seriesID' : str(serie["id"]), 'Title' : sTitle})
             oGui.addFolder(guiElement, params, iTotal = total)
 
 def showCharacters():
@@ -76,10 +81,7 @@ def showCharacters():
 def showSeries():    
     oGui = cGui()  
     oParams = ParameterHandler()  
-    
-    sUrl = URL_SERIES
-    oRequestHandler = cRequestHandler(sUrl)
-    sHtmlContent = oRequestHandler.request();
+    sHtmlContent = _getContent("series")
     sChar = oParams.getValue('char')
     if sChar: sChar = sChar.lower()
 
@@ -95,7 +97,7 @@ def showSeries():
         guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
         guiElement.setMediaType('tvshow')
         guiElement.setThumbnail(URL_COVER % serie["id"])        
-        oParams.addParams({'siteUrl' : URL_SERIES + '/' + str(serie["id"]), 'Title' : sTitle})
+        oParams.addParams({'seriesID' : str(serie["id"]), 'Title' : sTitle})
         oGui.addFolder(guiElement, oParams, iTotal = total)
 
     oGui.setView('tvshows')
@@ -107,13 +109,12 @@ def showSeasons():
 	
     params = ParameterHandler()
     sTitle = params.getValue('Title')
-    sUrl = params.getValue('siteUrl')
+    seriesId = params.getValue('seriesID')
     sImdb = params.getValue('imdbID')
     
     logger.info("%s: show seasons of '%s' " % (SITE_NAME, sTitle))
 
-    oRequestHandler = cRequestHandler(sUrl+"/1")
-    sHtmlContent = oRequestHandler.request()
+    sHtmlContent = _getContent("series/%s/1" % seriesId)
     data = json.loads(sHtmlContent)
     total = int(data["series"]["seasons"])
     for i in range(1,total+1):
@@ -122,7 +123,6 @@ def showSeasons():
         guiElement.setMediaType('season')
         guiElement.setSeason(seasonNum)
         guiElement.setTVShowTitle(sTitle)
-        oParams = ParameterHandler()
 
         params.setParam('Season', seasonNum)
         guiElement.setThumbnail(URL_COVER % data["series"]["id"])
@@ -134,14 +134,13 @@ def showEpisodes():
     oGui = cGui()
     oParams = ParameterHandler()
     sShowTitle = oParams.getValue('Title')
-    sUrl = oParams.getValue('siteUrl')
+    seriesId = oParams.getValue('seriesID')
     sImdb = oParams.getValue('imdbID')    
     sSeason = oParams.getValue('Season')
     
     logger.info("%s: show episodes of '%s' season '%s' " % (SITE_NAME, sShowTitle, sSeason)) 
     
-    oRequestHandler = cRequestHandler(sUrl+"/"+sSeason)
-    sHtmlContent = oRequestHandler.request();
+    sHtmlContent = _getContent("series/%s/%s" % (seriesId,sSeason))
     data = json.loads(sHtmlContent)
     total = len(data['epi'])
     for episode in data['epi']:
@@ -156,8 +155,8 @@ def showEpisodes():
         guiElement.setTVShowTitle(sShowTitle)
         guiElement.setThumbnail(URL_COVER % data["series"]["id"])
 
-        #oParams.setParam('EpisodeNr', episode['epi'])
-        oParams.setParam('siteUrl',sUrl+"/"+sSeason+"/"+episode['epi'])
+        oParams.setParam('EpisodeNr', episode['epi'])
+        #oParams.setParam('siteUrl',sUrl+"/"+sSeason+"/"+episode['epi'])
         oGui.addFolder(guiElement, oParams, bIsFolder = False, iTotal = total)  
     oGui.setView('episodes')
     oGui.setEndOfDirectory()
@@ -165,16 +164,17 @@ def showEpisodes():
 def showHosters():
     oParams= ParameterHandler()
     sTitle = oParams.getValue('Title')	
-    sUrl = oParams.getValue('siteUrl')
+    seriesId = oParams.getValue('seriesID')
+    season = oParams.getValue('Season')
+    episode = oParams.getValue('EpisodeNr')
     
-    oRequestHandler = cRequestHandler(sUrl)
-    sHtmlContent = oRequestHandler.request()
+    sHtmlContent = _getContent("series/%s/%s/%s" % (seriesId,season,episode))
     data = json.loads(sHtmlContent)
 
     hosters = []
     for link in data['links']:
         hoster = dict()
-        hoster['link'] = URL_MAIN + '/api/watch/'+ link['id'] 
+        hoster['link'] = URL_MAIN + 'watch/'+ link['id'] 
         hoster['name'] = link['hoster']
         hoster['displayedName'] = link['hoster']
         hosters.append(hoster)
@@ -184,12 +184,11 @@ def showHosters():
 
 def getHosterUrl(sUrl = False):
     oParams = ParameterHandler()
-    sTitle = oParams.getValue('Title')
-    sHoster = oParams.getValue('Hoster')
+    #sTitle = oParams.getValue('Title')
+    #sHoster = oParams.getValue('Hoster')
     if not sUrl:
         sUrl = oParams.getValue('url')
-    oRequestHandler = cRequestHandler(sUrl)
-    sHtmlContent = oRequestHandler.request();
+    sHtmlContent = _getContent(sUrl.replace(URL_MAIN,''))
     data = json.loads(sHtmlContent)
 
     results = []

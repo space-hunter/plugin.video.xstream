@@ -1,5 +1,6 @@
 #!/usr/bin/env python2.7
 import os
+import sys
 import urllib
 import httplib
 import mechanize
@@ -117,14 +118,11 @@ class cRequestHandler:
             xbmcgui.Dialog().ok('xStream', str(e))
             logger.error("HTTPException "+str(e)+" Url: "+self.__sUrl)
             return ''
-        #except Exception:
-        #except:
-            #oResponse = mechanize.urlopen(oRequest)
-        try:
-            cookieJar.load(self._cookiePath, self.__bIgnoreDiscard, self.__bIgnoreExpired)
-        except Exception as e:
-            logger.info(e)
+
         cookieJar.extract_cookies(oResponse, oRequest)
+
+        cookieJar = self.__checkCookie(cookieJar)
+
         cookieJar.save(self._cookiePath, self.__bIgnoreDiscard, self.__bIgnoreExpired)
         sContent = oResponse.read()
         self.__sResponseHeader = oResponse.info()
@@ -154,6 +152,13 @@ class cRequestHandler:
 
         return sContent
 
+    def __checkCookie(self, cookieJar):
+        for entry in cookieJar:
+            if entry.expires > sys.maxint:
+                entry.expires = sys.maxint
+
+        return cookieJar
+
     def getHeaderLocationUrl(self):        
         opened = mechanize.urlopen(self.__sUrl)
         return opened.geturl()
@@ -165,6 +170,30 @@ class cRequestHandler:
             file = open(cookieFile, 'w')
             file.close()
         self._cookiePath = cookieFile
+
+    def getCookie(self, sCookieName):
+        cookieJar = mechanize.LWPCookieJar()
+        try: #TODO ohne try evtl.
+            cookieJar.load(self._cookiePath, self.__bIgnoreDiscard, self.__bIgnoreExpired)
+        except Exception as e:
+            logger.info(e)
+
+        for entry in cookieJar:
+            if entry.name == sCookieName:
+                return entry
+
+        return False
+
+    def setCookie(self, oCookie):
+        cookieJar = mechanize.LWPCookieJar()
+        try: #TODO ohne try evtl.
+            cookieJar.load(self._cookiePath, self.__bIgnoreDiscard, self.__bIgnoreExpired)
+        except Exception as e:
+            logger.info(e)
+
+        cookieJar.set_cookie(oCookie)
+
+        cookieJar.save(self._cookiePath, self.__bIgnoreDiscard, self.__bIgnoreExpired)
 
     def ignoreDiscard(self, bIgnoreDiscard):
         self.__bIgnoreDiscard = bIgnoreDiscard

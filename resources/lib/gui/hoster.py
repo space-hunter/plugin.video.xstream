@@ -187,20 +187,39 @@ class cHosterGui:
             return False
         return True
         
-		
-    def sendToPyLoad(self, sMediaUrl = False):
+    def sendToPyLoad(self, siteResult = False):
         from resources.lib.handler.pyLoadHandler import cPyLoadHandler
-        params = ParameterHandler()      
-        sHosterIdentifier = params.getValue('sHosterIdentifier')
-        if not sMediaUrl:            
-            sMediaUrl = params.getValue('sMediaUrl')            
-        sFileName = params.getValue('sFileName')
-        if self.dialog:
-            self.dialog.close()
-        logger.info('call send to PyLoad: ' + sMediaUrl)       
-        cPyLoadHandler().sendToPyLoad(sMediaUrl)
-        
+        import urlresolver
+        params = ParameterHandler()
 
+        sMediaUrl = params.getValue('sMediaUrl')
+        sFileName = params.getValue('MovieTitle')
+        if not sFileName:
+            sFileName = params.getValue('Title')
+        if not sFileName: #nur vorrübergehend
+            sFileName = params.getValue('sMovieTitle')
+        if not sFileName:
+            sFileName = params.getValue('title')
+
+        if siteResult:
+            sMediaUrl = siteResult['streamUrl']
+            if siteResult['resolved']:
+                sLink = sMediaUrl
+            else:
+                sLink = urlresolver.resolve(sMediaUrl)
+        else:
+            sLink = urlresolver.resolve(sMediaUrl)   
+        try:
+            msg = sLink.msg
+        except:
+            msg = False
+        if sLink != False and not msg:
+            logger.info('download with pyLoad: ' + sMediaUrl)
+            cPyLoadHandler().sendToPyLoad(sFileName,sLink)
+            return True
+        else:
+            cGui().showError('xStream', str(msg), 5)
+            return False
         
     def sendToJDownloader(self, sMediaUrl = False):
         from resources.lib.handler.jdownloaderHandler import cJDownloaderHandler
@@ -242,8 +261,15 @@ class cHosterGui:
         for hoster in hosterList:
             source = urlresolver.HostedMediaFile(host=hoster['name'].lower(), media_id='dummy')
             if source:
+                priority = False
                 for resolver in source._HostedMediaFile__resolvers:
-                    ranking.append([resolver.priority,hoster])
+                    if resolver.domains[0] != '*':
+                        priority = resolver.priority
+                        break
+                    if not priority:
+                        priority = resolver.priority                        
+                if priority:
+                    ranking.append([priority,hoster])
             elif not filter:
                 ranking.append([999,hoster])
 
@@ -342,8 +368,7 @@ class cHosterGui:
         elif playMode == 'jd':
             self.sendToJDownloader(siteResult['streamUrl'])
         elif playMode == 'pyload':
-            self.sendToPyLoad(siteResult['streamUrl'])
-
+            self.sendToPyLoad(siteResult)
     
     def _chooseHoster(self, siteResult):
         dialog = xbmcgui.Dialog()
