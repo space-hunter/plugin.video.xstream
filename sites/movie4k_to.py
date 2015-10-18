@@ -568,12 +568,12 @@ def showHosters():
     if (params.exist('sUrl') and params.exist('sMovieTitle')):
         sUrl = params.getValue('sUrl')
         sMovieTitle = params.getValue('sMovieTitle')
-        
+       
         sHtmlContent = cRequestHandler(sUrl).request()
         sPattern = '<tr id="tablemoviesindex2">.*?<a href="([^"]+)">([^<]+)<.*?alt="(.*?) .*?width="16">.*?</a>.*?smileys/([1-9]).gif"'
         aResult = cParser().parse(sHtmlContent.replace('\\',''), sPattern)
+        hosters = []
         if (aResult[0] == True):
-            hosters = []
             for aEntry in aResult[1]:
                 sHoster = aEntry[2].strip()
                 hoster = {}
@@ -583,8 +583,34 @@ def showHosters():
                 hoster['quality'] = aEntry[3]
                 hoster['date'] = aEntry[1].strip()
                 hosters.append(hoster)
-            hosters.append('showHoster')
-            return hosters
+           
+    sPattern = '<SELECT name="hosterlist".*?>(.*?)</SELECT>'
+    oParser = cParser()        
+    aResult = oParser.parse(sHtmlContent, sPattern)
+    
+    if (aResult[0] == True):
+        sPattern = '<OPTION value="([^"]+)".*?>([^<]+)</OPTION>'
+            aResult = oParser.parse(aResult[1][0],sPattern)
+           
+            if (aResult[0] == True):
+                for aEntry in aResult[1]:
+                    sUrl = aEntry[0]
+
+                    if not sUrl.startswith('http'):
+                        sUrl = URL_MAIN +'/'+ sUrl
+                       
+                    sHosterFull = aEntry[1].strip()
+                   
+                    hoster = {}
+                    hoster['name'] = sHosterFull.rsplit(' ', 1)[0]
+                    hoster['link'] = sUrl
+                    hoster['displayedName'] = sHosterFull
+                    hosters.append(hoster)
+       
+    if(len(hosters) > 0):
+        hosters.append('showHoster')
+   
+    return hosters
 
 def showHoster(sUrl=False):
     params = ParameterHandler()
