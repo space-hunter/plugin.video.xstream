@@ -32,9 +32,6 @@ class ParameterHandler:
         checks if paramter with the name "paramName" exists
         '''
         return paramName in self.__params
-
-    def delParam(self, paramName):
-        self.__params.pop(paramName, None)
     
     def setParam(self, paramName, paramValue):
         '''

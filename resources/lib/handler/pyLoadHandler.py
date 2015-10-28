@@ -1,7 +1,6 @@
 from resources.lib.config import cConfig
 from resources.lib.gui.gui import cGui
 from resources.lib import logger
-from string import maketrans
 import sys, urllib, urllib2
 
 
@@ -9,14 +8,14 @@ class cPyLoadHandler:
     def __init__(self):
         self.config = cConfig()
 
-    def sendToPyLoad(self, sPackage, sUrl):
-        logger.info('PyLoad package: '+str(sPackage)+', '+str(sUrl))
-        if(self.__sendLinkToCore(sPackage, sUrl)==True):
+    def sendToPyLoad(self, sUrl):
+        logger.info('PyLoad link: '+str(sUrl))
+        if(self.__sendLinkToCore(sUrl)==True):
             cGui().showInfo('PyLoad', 'Link gesendet', 5)
         else:
             cGui().showInfo('PyLoad', 'Fehler beim Senden des Links!', 5)
             
-    def __sendLinkToCore(self, sPackage, sUrl):
+    def __sendLinkToCore(self, sUrl):
         logger.info('Sending link...')
         
         try:
@@ -38,11 +37,7 @@ class cPyLoadHandler:
             session = page[:-1]
             opener = urllib2.build_opener()
             opener.addheaders.append(('Cookie', 'beaker.session.id='+session))
-            #pyLoad doesn't like utf-8, so converting Package name to ascii, also stripping any characters that do not belong into a path name (\/:*?"<>|)
-            sPackage=str(sPackage).decode("utf-8").encode('ascii','replace').translate(maketrans('\/:*?"<>|', '_________'))
-            py_url=py_host+':'+py_port+'/api/addPackage?name="' + urllib.quote_plus(sPackage) + '"&links=["' + urllib.quote_plus(sUrl) + '"]'
-            logger.info('PyLoad API call: '+py_url)
-            sock = opener.open(py_url)
+            sock = opener.open(py_host+':'+py_port+'/api/addPackage?name=""&links=["' + sUrl + '"]')
             logger.info('123')
             content = sock.read()
             sock.close()

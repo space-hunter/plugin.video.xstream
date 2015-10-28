@@ -41,7 +41,7 @@ class cDownload:
                 sPath = dialog.browse(3, 'Downloadfolder', 'files', '')
 
             if (sPath != ''):                
-                sDownloadPath = xbmc.translatePath(sPath +  '%s' % (self.__sTitle, ))
+                sDownloadPath = xbmc.translatePath(sPath +  '%s' % (self.__sTitle, )).decode('utf-8')
                 try:
                     logger.info('download file: ' + str(url) + ' to ' + str(sDownloadPath))
                     self.__createProcessDialog()

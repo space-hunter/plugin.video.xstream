@@ -9,7 +9,7 @@ from resources.lib.config import cConfig
 from resources.lib import logger
 import string
 import json
-from resources.lib.bs_finalizer import BsTokenGenererator as BSfinal
+from resources.lib.bs_finalizer import *
 
     
 # Variablen definieren die "global" verwendet werden sollen
@@ -35,7 +35,7 @@ def load():
 def _getContent(urlPart): 
     sUrl = URL_MAIN + urlPart
     request = cRequestHandler(sUrl)
-    BSfinal().mod_request(request,urlPart)
+    mod_request(request,urlPart)
     return request.request()
 
  

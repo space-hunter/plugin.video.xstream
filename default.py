@@ -3,7 +3,7 @@
 from os import getcwd
 from os.path import join
 from sys import path
-from xbmc import translatePath
+import xbmc
 from xbmc import log
 from resources.lib import common
 
@@ -11,24 +11,27 @@ __settings__ = common.addon
 __cwd__ = common.addonPath
 
 # Add different library path
-path.append(translatePath(join(__cwd__, "resources", "lib")))
-path.append(translatePath(join(__cwd__, "resources", "lib", "gui")))
-path.append(translatePath(join(__cwd__, "resources", "lib", "handler")))
-path.append(translatePath(join(__cwd__, "resources", "art", "sites")))
-path.append(translatePath(join(__cwd__, "sites")))
+path.append(join(__cwd__, "resources", "lib"))
+path.append(join(__cwd__, "resources", "lib", "gui"))
+path.append(join(__cwd__, "resources", "lib", "handler"))
+path.append(join(__cwd__, "resources", "art", "sites"))
+path.append(join(__cwd__, "sites"))
 
-log("The new sys.path list: %s" % sys.path, level = xbmc.LOGDEBUG)
+log("The new sys.path list: %s" % path, level = xbmc.LOGDEBUG)
 
 # Run xstream
 from xstream import run
 log('*---- Running xStream, version %s ----*' % __settings__.getAddonInfo('version'))
 #import cProfile
-#cProfile.run('run()',translatePath(join(__cwd__,'xstream.pstats')))
+#cProfile.run('run()',join(__cwd__,'xstream.pstats'))
 try:
     run()
 except Exception, err:
-    import traceback
-    import xbmcgui
-    print traceback.format_exc()
-    dialog = xbmcgui.Dialog().ok('xStream Error',str(err.__class__.__name__),str(err))
+    if str(err) == 'UserAborted':
+        print "\t[xStream] User aborted list creation"
+    else:
+        import traceback
+        import xbmcgui
+        print traceback.format_exc()
+        dialog = xbmcgui.Dialog().ok('Error',str(err.__class__.__name__)+" : "+str(err),str(traceback.format_exc().splitlines()[-3].split('addons')[-1]))
     

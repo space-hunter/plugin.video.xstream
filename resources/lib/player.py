@@ -10,15 +10,21 @@ class XstreamPlayer(xbmc.Player):
     def __init__(self, *args, **kwargs):
         xbmc.Player.__init__(self, *args, **kwargs)        
         self.streamFinished = False
+        self.streamSuccess = True
         self.playedTime = 0
         self.totalTime = 999999
         logger.info('player instance created')
     
     def onPlayBackStarted(self):
-        logger.info('starting playeback')
+        logger.info('starting Playback')
         self.totalTime = self.getTotalTime()
+
     def onPlayBackStopped(self):
         logger.info('Playback stopped')
+        if self.playedTime == 0 and self.totalTime == 999999:
+            self.streamSuccess = False
+            logger.error('Kodi failed to open stream')
+
         self.streamFinished = True
         if cConfig().getSetting('metahandler')=='true':
             META = True
@@ -91,17 +97,11 @@ class cPlayer:
     def startPlayer(self):
         logger.info('start player')
         xbmcPlayer = XstreamPlayer()
-        #logger.info('add playlist to player instance')
-        #oPlayList = self.__getPlayList()
-        #xbmcPlayer.play(oPlayList)
 
-        if not cConfig().getSetting('metahandler')=='true':
-            logger.info('MetaHandler is deactivated, stopping player monitor')
-            return
         while (not xbmc.abortRequested) & (not xbmcPlayer.streamFinished):
-            while xbmcPlayer.isPlayingVideo():
+            if xbmcPlayer.isPlayingVideo():
                 xbmcPlayer.playedTime = xbmcPlayer.getTime()
-                xbmc.sleep(1000)
             xbmc.sleep(1000)
+        return xbmcPlayer.streamSuccess
             
         

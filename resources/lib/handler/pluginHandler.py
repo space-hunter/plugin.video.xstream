@@ -1,7 +1,6 @@
 import sys
 import os
 import json
-from xbmc import translatePath
 from resources.lib.config import cConfig
 from resources.lib import common, logger
 
@@ -13,10 +12,10 @@ class cPluginHandler:
         self.rootFolder = common.addonPath
         self.settingsFile = os.path.join(self.rootFolder, 'resources', 'settings.xml')
         self.profilePath = common.profilePath
-        self.pluginDBFile = translatePath(os.path.join(self.profilePath,'pluginDB'))
+        self.pluginDBFile = os.path.join(self.profilePath,'pluginDB')
         logger.info('profile folder: %s' % self.profilePath)
         logger.info('root folder: %s' % self.rootFolder)
-        self.defaultFolder =  translatePath(os.path.join(self.rootFolder, 'sites'))
+        self.defaultFolder =  os.path.join(self.rootFolder, 'sites')
         logger.info('default sites folder: %s' % self.defaultFolder)
 
     def getAvailablePlugins(self):
@@ -34,6 +33,9 @@ class cPluginHandler:
                 aPlugin = self.__importPlugin(sFileName)
                 if aPlugin:
                     pluginDB[sFileName] = aPlugin
+                    newPlugins[sFileName] = aPlugin
+        if newPlugins:
+            self.__addPluginsToSettings(newPlugins)
         # check pluginDB for obsolete entries
         deletions = []
         for pluginID in pluginDB:
@@ -43,7 +45,7 @@ class cPluginHandler:
             del pluginDB[id]
         self.__updatePluginDB(pluginDB)
         if deletions:
-            self.__updatePluginSettings(deletions,True)
+            self.__delPluginsFromSettings(deletions)
 
         aPlugins = []
         for pluginID in pluginDB:
@@ -90,7 +92,7 @@ class cPluginHandler:
         file.close()
         return data
 
-    def __addPluginsToSettings(self, data):
+    def __addPluginsToSettings(self, pluginData):
         '''
         data (dict): containing plugininformations
         '''
@@ -106,12 +108,12 @@ class cPluginHandler:
             logger.info('pluginElement not found')
             return False
         # add plugins to settings
-        for pluginID in data:
-            plugin = data[pluginID]
+        for pluginID in pluginData:
+            plugin = pluginData[pluginID]
             attrib = {'default': 'false', 'type': 'bool'}
             attrib['id'] = 'plugin_%s' % pluginID
             attrib['label'] = plugin['name']
-            newPlugin = ET.Element()
+            #newPlugin = ET.Element('setting')
             ET.SubElement(pluginElem, 'setting', attrib)
         tree.write(self.settingsFile)
 
