@@ -590,22 +590,22 @@ def showHosters():
     
     if (aResult[0] == True):
         sPattern = '<OPTION value="([^"]+)".*?>([^<]+)</OPTION>'
-            aResult = oParser.parse(aResult[1][0],sPattern)
+        aResult = oParser.parse(aResult[1][0],sPattern)
            
-            if (aResult[0] == True):
-                for aEntry in aResult[1]:
-                    sUrl = aEntry[0]
+        if (aResult[0] == True):
+            for aEntry in aResult[1]:
+                sUrl = aEntry[0]
 
-                    if not sUrl.startswith('http'):
-                        sUrl = URL_MAIN +'/'+ sUrl
+                if not sUrl.startswith('http'):
+                    sUrl = URL_MAIN +'/'+ sUrl
                        
-                    sHosterFull = aEntry[1].strip()
+                sHosterFull = aEntry[1].strip()
                    
-                    hoster = {}
-                    hoster['name'] = sHosterFull.rsplit(' ', 1)[0]
-                    hoster['link'] = sUrl
-                    hoster['displayedName'] = sHosterFull
-                    hosters.append(hoster)
+                hoster = {}
+                hoster['name'] = sHosterFull.rsplit(' ', 1)[0]
+                hoster['link'] = sUrl
+                hoster['displayedName'] = sHosterFull
+                hosters.append(hoster)
        
     if(len(hosters) > 0):
         hosters.append('showHoster')
