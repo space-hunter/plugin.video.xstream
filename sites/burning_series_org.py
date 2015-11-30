@@ -112,10 +112,12 @@ def showSeasons():
 
     sHtmlContent = _getContent("series/%s/1" % seriesId)
     data = json.loads(sHtmlContent)
+    rangeStart = not int(data["series"]["movies"])
     total = int(data["series"]["seasons"])
-    for i in range(1,total+1):
+    for i in range(rangeStart,total+1):
         seasonNum = str(i)
-        guiElement = cGuiElement('%s - Staffel %s' %(sTitle,seasonNum), SITE_IDENTIFIER, 'showEpisodes')
+        seasonTitle = 'Film(e)' if i is 0 else '%s - Staffel %s' %(sTitle,seasonNum)
+        guiElement = cGuiElement(seasonTitle, SITE_IDENTIFIER, 'showEpisodes')
         guiElement.setMediaType('season')
         guiElement.setSeason(seasonNum)
         guiElement.setTVShowTitle(sTitle)
