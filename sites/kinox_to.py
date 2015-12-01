@@ -44,10 +44,7 @@ def load():
     logger.info("Load %s" % SITE_NAME)
 
     sSecurityValue = __getSecurityCookieValue()
-    if sSecurityValue == '':
-        pass
-    elif sSecurityValue == False:
-        return
+    if not sSecurityValue: pass
     oParams = ParameterHandler()
     oParams.setParam('securityCookie', sSecurityValue)
     ## Create all main menu entries
@@ -171,11 +168,8 @@ def __getHtmlContent(sUrl = None, sSecurityValue = None):
         if sUrl is None:
             sUrl = oParams.getValue('sUrl')
     # Test if a security value is available
-    if sSecurityValue is None:
-        if oParams.exist("securityCookie"):
-            sSecurityValue = oParams.getValue("securityCookie")
-    if not sSecurityValue:
-        sSecurityValue = ''
+    if sSecurityValue is None and oParams.exist("securityCookie"):
+        sSecurityValue = oParams.getValue("securityCookie")
     # preferred language
     sPrefLang = __getPreferredLanguage()
     # Make the request
@@ -210,7 +204,7 @@ def __getSecurityCookieValue():
     result = jsunprotect.jsunprotect(sHtmlContent)
     if not result:
         logger.error("Not protected or Deactivator not found")
-        return ''
+        return False
     else:
         logger.info(result)
         oRequestHandler = cRequestHandler(URL_MAIN+'/?'+result, False)
@@ -218,7 +212,7 @@ def __getSecurityCookieValue():
         #oRequestHandler.addHeaderEntry('Accept', '*/*')
         oRequestHandler.addHeaderEntry('Host', domain)
         oRequestHandler.request()
-        return ''
+        return False
     for aEntry in aResult[1][0].split(","):
         sScriptFile = URL_MAIN +'/'+ str(aEntry).replace("'","").strip()
         sScriptFile.replace(" ","")
@@ -236,7 +230,7 @@ def __getSecurityCookieValue():
 
     if not aResult[0]:
         logger.info("No hash value found for the cookie")
-        return ''
+        return False
 
     sHash = aResult[1][0]
 
@@ -272,7 +266,7 @@ def _search(oGui, sSearchText):
 
 def __displayItems(oGui, sHtmlContent):
     # Test if a cookie was set, else define the default empty one
-    sSecurityValue = ""
+    sSecurityValue = False
     oParams = ParameterHandler()
     if oParams.exist("securityCookie"):
         sSecurityValue = oParams.getValue("securityCookie")
@@ -726,7 +720,7 @@ def __getAjaxContent(sMediaType, iPage, iMediaTypePageId, metaOn , sCharacter=''
     if oParams.exist("securityCookie"):
         sSecurityValue = oParams.getValue("securityCookie")
     else:
-        sSecurityValue = ''
+        sSecurityValue = False
     # preferred language
     sPrefLang = __getPreferredLanguage()
     # perform the request
