@@ -594,17 +594,12 @@ def parseSerieSite(sHtmlContent):
           aSeriesItems.append(aSeries)
   return aSeriesItems
 
-
 def __isSerie(sHtmlContent):
   sPattern = 'id="SeasonSelection" rel="([^"]+)"'
   oParser = cParser()
   aResult = oParser.parse(sHtmlContent, sPattern)
 
-  if (aResult[0] == True):
-    return True
-  else:
-    return False
-
+  return aResult[0] == True
 
 def ajaxCall():
     oGui = cGui()
