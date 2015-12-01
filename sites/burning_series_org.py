@@ -35,7 +35,7 @@ def _getContent(urlPart):
     sUrl = URL_MAIN + urlPart
     request = cRequestHandler(sUrl)
     mod_request(request,urlPart)
-    return request.request()
+    return json.loads(request.request())
 
 def showSearch():
     oGui = cGui()
@@ -48,8 +48,7 @@ def showSearch():
 
 def _search(oGui, sSearchText):
     params = ParameterHandler()
-    sHtmlContent = _getContent("series")
-    series = json.loads(sHtmlContent)
+    series = _getContent("series")
     total = len(series)
     sSearchText = sSearchText.lower()
     for serie in series:
@@ -78,11 +77,9 @@ def showCharacters():
 def showSeries():
     oGui = cGui()
     oParams = ParameterHandler()
-    sHtmlContent = _getContent("series")
     sChar = oParams.getValue('char')
     if sChar: sChar = sChar.lower()
-
-    series = json.loads(sHtmlContent)
+    series = _getContent("series")
     total = len(series)
     for serie in series:
         sTitle = serie["series"].encode('utf-8')
@@ -110,8 +107,7 @@ def showSeasons():
 
     logger.info("%s: show seasons of '%s' " % (SITE_NAME, sTitle))
 
-    sHtmlContent = _getContent("series/%s/1" % seriesId)
-    data = json.loads(sHtmlContent)
+    data = _getContent("series/%s/1" % seriesId)
     rangeStart = not int(data["series"]["movies"])
     total = int(data["series"]["seasons"])
     for i in range(rangeStart,total+1):
@@ -138,8 +134,7 @@ def showEpisodes():
 
     logger.info("%s: show episodes of '%s' season '%s' " % (SITE_NAME, sShowTitle, sSeason))
 
-    sHtmlContent = _getContent("series/%s/%s" % (seriesId,sSeason))
-    data = json.loads(sHtmlContent)
+    data = _getContent("series/%s/%s" % (seriesId,sSeason))
     total = len(data['epi'])
     for episode in data['epi']:
         if episode['german']:
@@ -166,9 +161,7 @@ def showHosters():
     season = oParams.getValue('Season')
     episode = oParams.getValue('EpisodeNr')
 
-    sHtmlContent = _getContent("series/%s/%s/%s" % (seriesId,season,episode))
-    data = json.loads(sHtmlContent)
-
+    data = _getContent("series/%s/%s/%s" % (seriesId,season,episode))
     hosters = []
     for link in data['links']:
         hoster = dict()
@@ -184,10 +177,8 @@ def getHosterUrl(sUrl = False):
     oParams = ParameterHandler()
     #sTitle = oParams.getValue('Title')
     #sHoster = oParams.getValue('Hoster')
-    if not sUrl:
-        sUrl = oParams.getValue('url')
-    sHtmlContent = _getContent(sUrl.replace(URL_MAIN,''))
-    data = json.loads(sHtmlContent)
+    if not sUrl: sUrl = oParams.getValue('url')
+    data = _getContent(sUrl.replace(URL_MAIN,''))
 
     results = []
     result = {}
