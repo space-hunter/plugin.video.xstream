@@ -87,6 +87,12 @@ def showSeries():
         guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
         guiElement.setMediaType('tvshow')
         guiElement.setThumbnail(URL_COVER % serie["id"])
+        # Load series description by iteration through the REST-Api (slow)
+        #sDesc = _getContent("series/%d/1" % int(serie['id']))
+        #guiElement.setDescription(sDesc['series']['description'].encode('utf-8'))
+        #sStart = str(sDesc['series']['start'])
+        #if sStart != 'None':
+        #   guiElement.setYear(int(sDesc['series']['start']))
         oParams.addParams({'seriesID' : str(serie["id"]), 'Title' : sTitle})
         oGui.addFolder(guiElement, oParams, iTotal = total)
 
