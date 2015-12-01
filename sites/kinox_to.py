@@ -155,9 +155,8 @@ def __getHtmlContent(sUrl = None, sSecurityValue = None):
     if sUrl is None and not oParams.exist('sUrl'):
         logger.error("There is no url we can request.")
         return False
-    else:
-        if sUrl is None:
-            sUrl = oParams.getValue('sUrl')
+    elif sUrl is None:
+        sUrl = oParams.getValue('sUrl')
     # Test if a security value is available
     if sSecurityValue is None and oParams.exist("securityCookie"):
         sSecurityValue = oParams.getValue("securityCookie")
@@ -240,9 +239,7 @@ def showSearch():
     oGui = cGui()
     # Show the keyboard and test if anything was entered
     sSearchText = oGui.showKeyBoard()
-    if not sSearchText:
-        oGui.setEndOfDirectory()
-        return
+    if not sSearchText: return
     _search(oGui, sSearchText)
     oGui.setEndOfDirectory()
 
@@ -304,13 +301,11 @@ def __displayItems(oGui, sHtmlContent):
         else:
             oGui.addFolder(oGuiElement,oParams,bIsFolder=False, iTotal = total)
 
-
 def showFavItems():
     oGui = cGui()
     sHtmlContent = __getHtmlContent()
     __displayItems(oGui, sHtmlContent)
     oGui.setEndOfDirectory()
-
 
 def showNews():
     oParams = ParameterHandler()
@@ -466,23 +461,23 @@ def _cinema(oGui):
     oParser = cParser()
     aResult = oParser.parse(sHtmlContent, sPattern)
     # iterate result and create GuiElements
-    if (aResult[0] == True):
-        total = len(aResult[1])
-        for aEntry in aResult[1]:
-            sMovieTitle = aEntry[0]
-            lang = __createLanguage(aEntry[4])
-            rating = aEntry[5]
-            oGuiElement = cGuiElement()
-            oGuiElement.setSiteName(SITE_IDENTIFIER)
-            oGuiElement.setFunction('parseMovieEntrySite')
-            oGuiElement.setLanguage(lang)
-            oGuiElement.setTitle(sMovieTitle)
-            oGuiElement.setDescription(aEntry[3])
-            oGuiElement.setMediaType('movie')
-            oGuiElement.setThumbnail(URL_MAIN + str(aEntry[2]))
-            oGuiElement.addItemValue('rating',rating)
-            oParams.setParam('sUrl', URL_MAIN + str(aEntry[1]))
-            oGui.addFolder(oGuiElement, oParams, bIsFolder = False, iTotal = total)
+    if not aResult[0]: return
+    total = len(aResult[1])
+    for aEntry in aResult[1]:
+        sMovieTitle = aEntry[0]
+        lang = __createLanguage(aEntry[4])
+        rating = aEntry[5]
+        oGuiElement = cGuiElement()
+        oGuiElement.setSiteName(SITE_IDENTIFIER)
+        oGuiElement.setFunction('parseMovieEntrySite')
+        oGuiElement.setLanguage(lang)
+        oGuiElement.setTitle(sMovieTitle)
+        oGuiElement.setDescription(aEntry[3])
+        oGuiElement.setMediaType('movie')
+        oGuiElement.setThumbnail(URL_MAIN + str(aEntry[2]))
+        oGuiElement.addItemValue('rating',rating)
+        oParams.setParam('sUrl', URL_MAIN + str(aEntry[1]))
+        oGui.addFolder(oGuiElement, oParams, bIsFolder = False, iTotal = total)
 
 def parseMovieEntrySite():
     oParams = ParameterHandler()
