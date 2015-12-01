@@ -119,8 +119,13 @@ def showSeasons():
     total = int(data["series"]["seasons"])
     for i in range(rangeStart, total + 1):
         seasonNum = str(i)
-        seasonTitle = 'Film(e)' if i is 0 else '%s - Staffel %s' %(sTitle, seasonNum)
-        guiElement = cGuiElement(seasonTitle, SITE_IDENTIFIER, 'showEpisodes')
+        if i is 0:
+            seasonTitle = 'Film(e)'
+            dialogType = 'showCinemaMovies'
+        else:
+            seasonTitle = '%s - Staffel %s' %(sTitle, seasonNum)
+            dialogType = 'showEpisodes'
+        guiElement = cGuiElement(seasonTitle, SITE_IDENTIFIER, dialogType)
         guiElement.setMediaType('season')
         guiElement.setSeason(seasonNum)
         guiElement.setTVShowTitle(sTitle)
@@ -156,11 +161,33 @@ def showEpisodes():
         guiElement.setEpisode(episode['epi'])
         guiElement.setTVShowTitle(sShowTitle)
         guiElement.setThumbnail(URL_COVER % data["series"]["id"])
-
         oParams.setParam('EpisodeNr', episode['epi'])
-        #oParams.setParam('siteUrl',sUrl+"/"+sSeason+"/"+episode['epi'])
         oGui.addFolder(guiElement, oParams, bIsFolder = False, iTotal = total)
     oGui.setView('episodes')
+    oGui.setEndOfDirectory()
+
+def showCinemaMovies():
+    oGui = cGui()
+    oParams = ParameterHandler()
+    sShowTitle = oParams.getValue('Title')
+    seriesId = oParams.getValue('seriesID')
+    sImdb = oParams.getValue('imdbID')
+
+    data = _getJsonContent("series/%s/0" % (seriesId))
+    total = len(data['epi'])
+
+    for movie in data['epi']:
+        if movie['german']:
+            title = movie['german'].encode('utf-8')
+        else:
+            title = movie['english'].encode('utf-8')
+        guiElement = cGuiElement(title, SITE_IDENTIFIER, 'showHosters')
+        guiElement.setMediaType('movie')
+        guiElement.setTitle(title)
+        guiElement.setThumbnail(URL_COVER % data["series"]["id"])
+        oParams.setParam('EpisodeNr', movie['epi'])
+        oGui.addFolder(guiElement, oParams, bIsFolder = False, iTotal = total)
+    oGui.setView('movie')
     oGui.setEndOfDirectory()
 
 # Show a hoster dialog for a requested episode
