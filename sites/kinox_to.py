@@ -142,10 +142,7 @@ def __checkSubLanguage(sTitle):
     temp = sTitle.split(' *')
     subLang = temp[-1].split('subbed*')[0].strip()
     title = ' '.join(temp[0:-1]).strip()
-    if subLang == 'german':
-        return [title, 'de']
-    else:
-        return [title, subLang]
+    return [title, 'de'] if subLang == 'german' else [title, subLang]
 
 def __getHtmlContent(sUrl = None, sSecurityValue = None):
     oParams = ParameterHandler()
