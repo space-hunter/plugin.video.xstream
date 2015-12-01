@@ -123,27 +123,19 @@ def showDocuMenu():
     oGui.setEndOfDirectory()
 
 def __createLanguage(sLangID):
-    if sLangID == "1":
-        return 'de'
-    elif sLangID == "2" or sLangID == "15":
-        return 'en'
-    elif sLangID == "7":
-        return 'tu'
-    elif sLangID == "4":
-        return 'ch'
-    elif sLangID == "5":
-        return 'sp'
-    elif sLangID == "6":
-        return 'fr'
-    elif sLangID == "8":
-        return 'jp'
-    elif sLangID == '11':
-        return 'it'
-    elif sLangID == "16":
-        return 'nl'
-    elif sLangID == "25":
-        return 'ru'
-    return sLangID
+    return {
+        '1' : 'de',
+        '2' : 'en',
+        '15' : 'en',
+        '7' : 'tu',
+        '4': 'ch',
+        '5': 'sp',
+        '6': 'fr',
+        '8': 'jp',
+        '11': 'it',
+        '16': 'nl',
+        '25': 'ru',
+    }.get(sLangID, sLangID)
 
 def __checkSubLanguage(sTitle):
     if not ' subbed*' in sTitle:
