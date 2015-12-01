@@ -50,12 +50,12 @@ def _search(oGui, sSearchText):
     sSearchText = sSearchText.lower()
     for serie in series:
         sTitle = serie["series"].encode('utf-8')
-        if sTitle.lower().find(sSearchText) != -1:
-            guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
-            guiElement.setMediaType('tvshow')
-            guiElement.setThumbnail(URL_COVER % serie["id"])
-            params.addParams({'seriesID' : str(serie["id"]), 'Title' : sTitle})
-            oGui.addFolder(guiElement, params, iTotal = total)
+        if sTitle.lower().find(sSearchText) == -1: continue
+        guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
+        guiElement.setMediaType('tvshow')
+        guiElement.setThumbnail(URL_COVER % serie["id"])
+        params.addParams({'seriesID' : str(serie["id"]), 'Title' : sTitle})
+        oGui.addFolder(guiElement, params, iTotal = total)
 
 def showCharacters():
     oGui = cGui()
@@ -82,7 +82,7 @@ def showSeries():
         sTitle = serie["series"].encode('utf-8')
         if sChar:
             if sChar == '#':
-                if sTitle[0].isalpha():continue
+                if sTitle[0].isalpha(): continue
             elif sTitle[0].lower() != sChar: continue
         guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
         guiElement.setMediaType('tvshow')
@@ -93,10 +93,8 @@ def showSeries():
     oGui.setView('tvshows')
     oGui.setEndOfDirectory()
 
-
 def showSeasons():
     oGui = cGui()
-
     params = ParameterHandler()
     sTitle = params.getValue('Title')
     seriesId = params.getValue('seriesID')
@@ -107,9 +105,9 @@ def showSeasons():
     data = _getContent("series/%s/1" % seriesId)
     rangeStart = not int(data["series"]["movies"])
     total = int(data["series"]["seasons"])
-    for i in range(rangeStart,total+1):
+    for i in range(rangeStart, total + 1):
         seasonNum = str(i)
-        seasonTitle = 'Film(e)' if i is 0 else '%s - Staffel %s' %(sTitle,seasonNum)
+        seasonTitle = 'Film(e)' if i is 0 else '%s - Staffel %s' %(sTitle, seasonNum)
         guiElement = cGuiElement(seasonTitle, SITE_IDENTIFIER, 'showEpisodes')
         guiElement.setMediaType('season')
         guiElement.setSeason(seasonNum)
@@ -131,14 +129,15 @@ def showEpisodes():
 
     logger.info("%s: show episodes of '%s' season '%s' " % (SITE_NAME, sShowTitle, sSeason))
 
-    data = _getContent("series/%s/%s" % (seriesId,sSeason))
+    data = _getContent("series/%s/%s" % (seriesId, sSeason))
     total = len(data['epi'])
     for episode in data['epi']:
+        title = "%d - " % int(episode['epi'])
         if episode['german']:
-            title = episode['german'].encode('utf-8')
+            title += episode['german'].encode('utf-8')
         else:
-            title = episode['english'].encode('utf-8')
-        guiElement = cGuiElement(str(episode['epi'])+" - "+title, SITE_IDENTIFIER, 'showHosters')
+            title += episode['english'].encode('utf-8')
+        guiElement = cGuiElement(title, SITE_IDENTIFIER, 'showHosters')
         guiElement.setMediaType('episode')
         guiElement.setSeason(data['season'])
         guiElement.setEpisode(episode['epi'])
@@ -158,11 +157,11 @@ def showHosters():
     season = oParams.getValue('Season')
     episode = oParams.getValue('EpisodeNr')
 
-    data = _getContent("series/%s/%s/%s" % (seriesId,season,episode))
+    data = _getContent("series/%s/%s/%s" % (seriesId, season, episode))
     hosters = []
     for link in data['links']:
         hoster = dict()
-        hoster['link'] = URL_MAIN + 'watch/'+ link['id']
+        hoster['link'] = URL_MAIN + 'watch/' + link['id']
         hoster['name'] = link['hoster']
         hoster['displayedName'] = link['hoster']
         hosters.append(hoster)
@@ -175,7 +174,7 @@ def getHosterUrl(sUrl = False):
     #sTitle = oParams.getValue('Title')
     #sHoster = oParams.getValue('Hoster')
     if not sUrl: sUrl = oParams.getValue('url')
-    data = _getContent(sUrl.replace(URL_MAIN,''))
+    data = _getContent(sUrl.replace(URL_MAIN, ''))
 
     results = []
     result = {}
