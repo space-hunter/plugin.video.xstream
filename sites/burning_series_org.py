@@ -32,18 +32,15 @@ def load():
     oGui.setEndOfDirectory()
 
 def _getContent(urlPart):
-    sUrl = URL_MAIN + urlPart
-    request = cRequestHandler(sUrl)
-    mod_request(request,urlPart)
+    request = cRequestHandler(URL_MAIN + urlPart)
+    mod_request(request, urlPart)
     return json.loads(request.request())
 
 def showSearch():
     oGui = cGui()
     sSearchText = oGui.showKeyBoard()
-    if (sSearchText != False and sSearchText != ''):
-        _search(oGui, sSearchText)
-    else:
-        return
+    if not sSearchText: return
+    _search(oGui, sSearchText)
     oGui.setEndOfDirectory()
 
 def _search(oGui, sSearchText):
