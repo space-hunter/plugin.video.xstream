@@ -481,33 +481,59 @@ def parseMovieEntrySite():
         sMovieTitle = __createMovieTitle(sHtmlContent)
         # get thumbnail
         result = cParser().parse(sHtmlContent, '<div class="Grahpics">.*?<img src="([^"]+)"')
-        thumbnail = ''
-        if result[0]:
-            thumbnail = URL_MAIN + str(result[1][0])
+        thumbnail = URL_MAIN + str(result[1][0]) if result[0] else False
 
         bIsSerie = __isSerie(sHtmlContent)
         if bIsSerie:
             oGui = cGui()
             aSeriesItems = parseSerieSite(sHtmlContent)
-            if len(aSeriesItems) > 0:
-                imdbID = oParams.getValue('imdbID')
-                for item in aSeriesItems:
-                    oGuiElement = cGuiElement(item['title'], SITE_IDENTIFIER, 'showHosters')
-                    sShowTitle = sMovieTitle.split('(')[0].split('*')[0]
-                    oGuiElement.setThumbnail(thumbnail)
-                    oGuiElement.setMediaType('episode')
-                    oGuiElement.setSeason(item['season'])
-                    oGuiElement.setEpisode(item['episode'])
-                    oGuiElement.setTVShowTitle(sShowTitle)
+            if not aSeriesItems[0]: return
+            total = len(aSeriesItems)
+            for aEntry in aSeriesItems[1]:
+                seasonNum = str(aEntry)
+                guiElement = cGuiElement('%s - Staffel %s' %(sMovieTitle, seasonNum), SITE_IDENTIFIER, 'showEpisodes')
+                guiElement.setMediaType('season')
+                guiElement.setSeason(seasonNum)
+                guiElement.setTVShowTitle(sMovieTitle)
 
-                    oParams.addParams({'sUrl':item['url'], 'episode':item['episode'], 'season':item['season']})
-                    oGui.addFolder(oGuiElement, oParams, bIsFolder = False, iTotal = len(aSeriesItems))
-            oGui.setView('episodes')
+                oParams.setParam('Season', seasonNum)
+                if thumbnail:
+                    guiElement.setThumbnail(thumbnail)
+                oGui.addFolder(guiElement, oParams, iTotal = total)
+            oGui.setView('seasons')
             oGui.setEndOfDirectory()
         else:
             logger.info('Movie')
             result = showHosters(sHtmlContent, sMovieTitle)
             return result
+
+def showEpisodes():
+    oGui = cGui()
+    oParams = ParameterHandler()
+    sSecurityValue = oParams.getValue('securityCookie')
+    sUrl = oParams.getValue('sUrl')
+    seasonNum = oParams.getValue('Season')
+    sHtmlContent = __getHtmlContent(sUrl, sSecurityValue)
+    sMovieTitle = __createMovieTitle(sHtmlContent)
+    result = cParser().parse(sHtmlContent, '<div class="Grahpics">.*?<img src="([^"]+)"')
+    thumbnail = URL_MAIN + str(result[1][0]) if result[0] else False
+
+    aSeriesItems = parseSerieEpisodes(sHtmlContent, seasonNum)
+    if not aSeriesItems[0]: return
+    total = len(aSeriesItems)
+    for item in aSeriesItems:
+        oGuiElement = cGuiElement(item['title'], SITE_IDENTIFIER, 'showHosters')
+        sShowTitle = sMovieTitle.split('(')[0].split('*')[0]
+        oGuiElement.setThumbnail(thumbnail)
+        oGuiElement.setMediaType('episode')
+        oGuiElement.setSeason(item['season'])
+        oGuiElement.setEpisode(item['episode'])
+        oGuiElement.setTVShowTitle(sShowTitle)
+
+        oParams.addParams({'sUrl':item['url'], 'episode':item['episode'], 'season':item['season']})
+        oGui.addFolder(oGuiElement, oParams, bIsFolder = False, iTotal = len(aSeriesItems))
+    oGui.setView('episodes')
+    oGui.setEndOfDirectory()
 
 def __createMovieTitle(sHtmlContent):
     sPattern = '<h1><span style="display: inline-block">(.*?)</h1>'
@@ -550,24 +576,35 @@ def parseSerieSite(sHtmlContent):
         aSeriesUrls = aResult[1][0].split("&amp;")
         sSeriesUrl = '&' + str(aSeriesUrls[0]) + '&' + str(aSeriesUrls[1])
 
-    sPattern = '<option.*?rel="([^"]+)".*?>Staffel ([^<]+)</option'
+    sPattern = '<option.*?value="([^"]+)".*?>Staffel.*?</option>'
+    return oParser.parse(sHtmlContent, sPattern)
+
+def parseSerieEpisodes(sHtmlContent, seasonNum):
+    aSeriesItems = []
+
+    sPattern = 'id="SeasonSelection" rel="([^"]+)"'
     oParser = cParser()
     aResult = oParser.parse(sHtmlContent, sPattern)
     if aResult[0]:
-        for aEntry in aResult[1]:
-            aSeriesIds = aEntry[0].split(",")
-            for iSeriesIds in aSeriesIds:
-                aSeries = {}
-                iEpisodeNum = iSeriesIds
-                iSeasonNum = aEntry[1]
-                sTitel = 'Staffel '+ str(iSeasonNum) + ' - ' + str(iEpisodeNum)
-                sUrl = URL_EPISODE_URL + sSeriesUrl + '&Season=' + str(iSeasonNum) + '&Episode=' + str(iEpisodeNum)
+        aSeriesUrls = aResult[1][0].split("&amp;")
+        sSeriesUrl = '&' + str(aSeriesUrls[0]) + '&' + str(aSeriesUrls[1])
 
-                aSeries['title'] = sTitel
-                aSeries['url'] = sUrl
-                aSeries['season'] = iSeasonNum
-                aSeries['episode'] = iEpisodeNum
-                aSeriesItems.append(aSeries)
+    sPattern = '<option.*?value="%d" rel="([^"]+)".*?>Staffel.*?</option>' % int(seasonNum)
+
+    aResult = oParser.parse(sHtmlContent, sPattern)
+    logger.info(aResult[1])
+    if aResult[0]:
+        aSeriesIds = aResult[1][0].split(",")
+        for iSeriesIds in aSeriesIds:
+            aSeries = {}
+            iEpisodeNum = iSeriesIds
+            sTitel = 'Folge ' + str(iEpisodeNum)
+            sUrl = URL_EPISODE_URL + sSeriesUrl + '&Season=' + str(seasonNum) + '&Episode=' + str(iEpisodeNum)
+            aSeries['title'] = sTitel
+            aSeries['url'] = sUrl
+            aSeries['season'] = seasonNum
+            aSeries['episode'] = iEpisodeNum
+            aSeriesItems.append(aSeries)
     return aSeriesItems
 
 def __isSerie(sHtmlContent):
