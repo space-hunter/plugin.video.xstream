@@ -48,15 +48,23 @@ class cGui:
         #check if we were using globalSearch
         inParams = ParameterHandler()
         self.globalSearch = inParams.getValue("function") == "globalSearch"
+        self.alterSearch = inParams.getValue("function") == "searchAlter"
+        self.searchResults = []
 
 
     def addFolder(self, oGuiElement, oOutputParameterHandler='', bIsFolder = True, iTotal = 0, isHoster = False):
         '''
         add GuiElement to Gui, adds listitem to a list
         '''
+        # abort xbmc list creation if user requests abort
         if xbmc.abortRequested:
             self.setEndOfDirectory(False)
             raise RuntimeError('UserAborted')
+        # store result in list if we searched for other sources
+        #if  self.altersearch:
+        #    self.searchresults.append(oguielement)
+        #    return
+
         if not oGuiElement._isMetaSet and self.isMetaOn and oGuiElement._mediaType:
             imdbID = oOutputParameterHandler.getValue('imdbID')
             if imdbID:
@@ -140,7 +148,7 @@ class cGui:
         if 'imdb_id' in itemValues and 'title' in itemValues:
             metaParams = {} 
             if itemValues['title']:
-                metaParams['title'] = itemValues['title']
+                metaParams['title'] = oGuiElement.getTitle()
             if 'mediaType' in itemValues and itemValues['mediaType']:
                 metaParams['mediaType'] = itemValues['mediaType']
             elif 'TVShowTitle' in itemValues and itemValues['TVShowTitle']:
