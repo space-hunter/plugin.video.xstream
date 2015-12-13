@@ -18,10 +18,7 @@ class cPluginHandler:
         logger.info('default sites folder: %s' % self.defaultFolder)
 
     def getAvailablePlugins(self):
-        oConfig = cConfig()
         pluginDB = self.__getPluginDB()
-        # default plugins
-        sIconFolder = os.path.join(self.rootFolder, 'resources','art','sites')
         # default plugins
         update = False
         fileNames = self.__getFileNamesFromFolder(self.defaultFolder)
@@ -49,17 +46,20 @@ class cPluginHandler:
             self.__updateSettings(pluginDB)
             self.__updatePluginDB(pluginDB)
 
-        return getAvailablePluginsFromDB()
+        return self.getAvailablePluginsFromDB()
 
         
 
     def getAvailablePluginsFromDB(self):
         plugins = []
+        oConfig = cConfig()
+        iconFolder = os.path.join(self.rootFolder, 'resources','art','sites')
+        pluginDB = self.__getPluginDB()
         for pluginID in pluginDB:
             plugin = pluginDB[pluginID]
             pluginSettingsName = 'plugin_%s' % pluginID
             if plugin['icon']:
-                plugin['icon'] = os.path.join(sIconFolder, plugin['icon'])
+                plugin['icon'] = os.path.join(iconFolder, plugin['icon'])
             else:
                 plugin['icon'] = ''
             # existieren zu diesem plugin die an/aus settings
@@ -71,7 +71,6 @@ class cPluginHandler:
             else:
                 # settings nicht gefunden, also schalten wir es trotzdem sichtbar
                 plugins.append(plugin)
-       
         return plugins
 
     def __updatePluginDB(self, data):
@@ -144,13 +143,13 @@ class cPluginHandler:
 
     def __getPluginData(self, fileName):
         pluginData = {}
+        pluginData['id'] = fileName
         try:
             plugin = __import__(fileName, globals(), locals())
             pluginData['name'] = plugin.SITE_NAME                       
         except Exception, e:
             logger.error("Can't import plugin: %s :%s" % (fileName, e))
             return False
-        pluginData['name'] = fileName
         try:
             pluginData['icon'] = plugin.SITE_ICON
         except:
