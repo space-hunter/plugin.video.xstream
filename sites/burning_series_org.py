@@ -11,8 +11,7 @@ import string
 import json
 from resources.lib.bs_finalizer import *
 
-    
-# Variablen definieren die "global" verwendet werden sollen
+# "Global" variables
 SITE_IDENTIFIER = 'burning_series_org'
 SITE_NAME = 'Burning-Series'
 SITE_ICON = 'burning_series.jpg'
@@ -20,106 +19,113 @@ SITE_ICON = 'burning_series.jpg'
 URL_MAIN = 'http://www.bs.to/api/'
 URL_COVER = 'http://s.bs.to/img/cover/%s.jpg|encoding=gzip'
 
-# Hauptmenu erstellen
+# Mainmenu
 def load():
     logger.info("Load %s" % SITE_NAME)
-    # instanzieren eines Objekts der Klasse cGui zur Erstellung eines Menus
     oGui = cGui()
-    # Menueintrag, durch Instanzierung eines Objekts der Klasse cGuiElement, erzeugen und zum Menu (oGui) hinzufügen
     oGui.addFolder(cGuiElement('Alle Serien', SITE_IDENTIFIER, 'showSeries'))
     oGui.addFolder(cGuiElement('A-Z', SITE_IDENTIFIER, 'showCharacters'))
     oGui.addFolder(cGuiElement('Suche', SITE_IDENTIFIER, 'showSearch'))
-    # Ende des Menus    
     oGui.setEndOfDirectory()
 
-def _getContent(urlPart): 
-    sUrl = URL_MAIN + urlPart
-    request = cRequestHandler(sUrl)
-    mod_request(request,urlPart)
-    return request.request()
+### Mainmenu entries
 
- 
-
-def showSearch():
+# Show all series in a big list
+def showSeries():
     oGui = cGui()
-    sSearchText = oGui.showKeyBoard()
-    if (sSearchText != False and sSearchText != ''):
-        _search(oGui, sSearchText)
-    else:
-        return
-    oGui.setEndOfDirectory()
-
-def _search(oGui, sSearchText):    
-    params = ParameterHandler()
-    sHtmlContent = _getContent("series")
-    series = json.loads(sHtmlContent)
-    total = len(series)
-    sSearchText = sSearchText.lower()
-    for serie in series:
-        sTitle = serie["series"].encode('utf-8') 
-        if sTitle.lower().find(sSearchText) != -1:
-            guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
-            guiElement.setMediaType('tvshow')
-            guiElement.setThumbnail(URL_COVER % serie["id"])        
-            params.addParams({'seriesID' : str(serie["id"]), 'Title' : sTitle})
-            oGui.addFolder(guiElement, params, iTotal = total)
-
-def showCharacters():
-    oGui = cGui()
-    oGuiElement = cGuiElement()
     oParams = ParameterHandler()
-    oGuiElement = cGuiElement('#', SITE_IDENTIFIER, 'showSeries')
-    oParams.setParam('char','#')
-    oGui.addFolder(oGuiElement, oParams)
-    for letter in string.uppercase[:26]:
-        oGuiElement = cGuiElement(letter, SITE_IDENTIFIER, 'showSeries')
-        oParams.setParam('char',letter)
-        oGui.addFolder(oGuiElement, oParams)
-    # Ende des Menus    
-    oGui.setEndOfDirectory()
-
-def showSeries():    
-    oGui = cGui()  
-    oParams = ParameterHandler()  
-    sHtmlContent = _getContent("series")
     sChar = oParams.getValue('char')
     if sChar: sChar = sChar.lower()
-
-    series = json.loads(sHtmlContent)
+    series = _getJsonContent("series")
     total = len(series)
     for serie in series:
-        sTitle = serie["series"].encode('utf-8') 
+        sTitle = serie["series"].encode('utf-8')
         if sChar:
             if sChar == '#':
-                if sTitle[0].isalpha():continue
+                if sTitle[0].isalpha(): continue
             elif sTitle[0].lower() != sChar: continue
-     
         guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
         guiElement.setMediaType('tvshow')
-        guiElement.setThumbnail(URL_COVER % serie["id"])        
+        guiElement.setThumbnail(URL_COVER % serie["id"])
+        # Load series description by iteration through the REST-Api (slow)
+        #sDesc = _getJsonContent("series/%d/1" % int(serie['id']))
+        #guiElement.setDescription(sDesc['series']['description'].encode('utf-8'))
+        #sStart = str(sDesc['series']['start'])
+        #if sStart != 'None':
+        #   guiElement.setYear(int(sDesc['series']['start']))
         oParams.addParams({'seriesID' : str(serie["id"]), 'Title' : sTitle})
         oGui.addFolder(guiElement, oParams, iTotal = total)
 
     oGui.setView('tvshows')
     oGui.setEndOfDirectory()
 
-    
+# Show an alphabetic list 'A-Z' prepended by '#' for alphanumeric series
+def showCharacters():
+    oGui = cGui()
+    oGuiElement = cGuiElement()
+    oParams = ParameterHandler()
+    oGuiElement = cGuiElement('#', SITE_IDENTIFIER, 'showSeries')
+    oParams.setParam('char', '#')
+    oGui.addFolder(oGuiElement, oParams)
+    for letter in string.uppercase[:26]:
+        oGuiElement = cGuiElement(letter, SITE_IDENTIFIER, 'showSeries')
+        oParams.setParam('char', letter)
+        oGui.addFolder(oGuiElement, oParams)
+    oGui.setEndOfDirectory()
+
+# Show the search dialog, return/abort on empty input
+def showSearch():
+    oGui = cGui()
+    sSearchText = oGui.showKeyBoard()
+    if not sSearchText: return
+    _search(oGui, sSearchText)
+    oGui.setEndOfDirectory()
+
+### Helper functions
+
+# Load a JSON object
+def _getJsonContent(urlPart):
+    request = cRequestHandler(URL_MAIN + urlPart)
+    mod_request(request, urlPart)
+    return json.loads(request.request())
+
+# Search for series using the requested string sSearchText
+def _search(oGui, sSearchText):
+    params = ParameterHandler()
+    series = _getJsonContent("series")
+    total = len(series)
+    sSearchText = sSearchText.lower()
+    for serie in series:
+        sTitle = serie["series"].encode('utf-8')
+        if sTitle.lower().find(sSearchText) == -1: continue
+        guiElement = cGuiElement(sTitle, SITE_IDENTIFIER, 'showSeasons')
+        guiElement.setMediaType('tvshow')
+        guiElement.setThumbnail(URL_COVER % serie["id"])
+        params.addParams({'seriesID' : str(serie["id"]), 'Title' : sTitle})
+        oGui.addFolder(guiElement, params, iTotal = total)
+
+# Show a list of seasons for a requested series, and movies if available
 def showSeasons():
     oGui = cGui()
-	
     params = ParameterHandler()
     sTitle = params.getValue('Title')
     seriesId = params.getValue('seriesID')
     sImdb = params.getValue('imdbID')
-    
+
     logger.info("%s: show seasons of '%s' " % (SITE_NAME, sTitle))
 
-    sHtmlContent = _getContent("series/%s/1" % seriesId)
-    data = json.loads(sHtmlContent)
+    data = _getJsonContent("series/%s/1" % seriesId)
+    rangeStart = not int(data["series"]["movies"])
     total = int(data["series"]["seasons"])
-    for i in range(1,total+1):
+    for i in range(rangeStart, total + 1):
         seasonNum = str(i)
-        guiElement = cGuiElement('%s - Staffel %s' %(sTitle,seasonNum), SITE_IDENTIFIER, 'showEpisodes')
+        if i is 0:
+            seasonTitle = 'Film(e)'
+            dialogType = 'showCinemaMovies'
+        else:
+            seasonTitle = '%s - Staffel %s' %(sTitle, seasonNum)
+            dialogType = 'showEpisodes'
+        guiElement = cGuiElement(seasonTitle, SITE_IDENTIFIER, dialogType)
         guiElement.setMediaType('season')
         guiElement.setSeason(seasonNum)
         guiElement.setTVShowTitle(sTitle)
@@ -130,51 +136,73 @@ def showSeasons():
     oGui.setView('seasons')
     oGui.setEndOfDirectory()
 
+# Show episodes of a requested season for a series
 def showEpisodes():
     oGui = cGui()
     oParams = ParameterHandler()
     sShowTitle = oParams.getValue('Title')
     seriesId = oParams.getValue('seriesID')
-    sImdb = oParams.getValue('imdbID')    
+    sImdb = oParams.getValue('imdbID')
     sSeason = oParams.getValue('Season')
-    
-    logger.info("%s: show episodes of '%s' season '%s' " % (SITE_NAME, sShowTitle, sSeason)) 
-    
-    sHtmlContent = _getContent("series/%s/%s" % (seriesId,sSeason))
-    data = json.loads(sHtmlContent)
+
+    logger.info("%s: show episodes of '%s' season '%s' " % (SITE_NAME, sShowTitle, sSeason))
+
+    data = _getJsonContent("series/%s/%s" % (seriesId, sSeason))
     total = len(data['epi'])
     for episode in data['epi']:
+        title = "%d - " % int(episode['epi'])
         if episode['german']:
-            title = episode['german'].encode('utf-8')
+            title += episode['german'].encode('utf-8')
         else:
-            title = episode['english'].encode('utf-8')
-        guiElement = cGuiElement(str(episode['epi'])+" - "+title, SITE_IDENTIFIER, 'showHosters')
+            title += episode['english'].encode('utf-8')
+        guiElement = cGuiElement(title, SITE_IDENTIFIER, 'showHosters')
         guiElement.setMediaType('episode')
         guiElement.setSeason(data['season'])
         guiElement.setEpisode(episode['epi'])
         guiElement.setTVShowTitle(sShowTitle)
         guiElement.setThumbnail(URL_COVER % data["series"]["id"])
-
         oParams.setParam('EpisodeNr', episode['epi'])
-        #oParams.setParam('siteUrl',sUrl+"/"+sSeason+"/"+episode['epi'])
-        oGui.addFolder(guiElement, oParams, bIsFolder = False, iTotal = total)  
+        oGui.addFolder(guiElement, oParams, bIsFolder = False, iTotal = total)
     oGui.setView('episodes')
     oGui.setEndOfDirectory()
-            
+
+def showCinemaMovies():
+    oGui = cGui()
+    oParams = ParameterHandler()
+    sShowTitle = oParams.getValue('Title')
+    seriesId = oParams.getValue('seriesID')
+    sImdb = oParams.getValue('imdbID')
+
+    data = _getJsonContent("series/%s/0" % (seriesId))
+    total = len(data['epi'])
+
+    for movie in data['epi']:
+        if movie['german']:
+            title = movie['german'].encode('utf-8')
+        else:
+            title = movie['english'].encode('utf-8')
+        guiElement = cGuiElement(title, SITE_IDENTIFIER, 'showHosters')
+        guiElement.setMediaType('movie')
+        guiElement.setTitle(title)
+        guiElement.setThumbnail(URL_COVER % data["series"]["id"])
+        oParams.setParam('EpisodeNr', movie['epi'])
+        oGui.addFolder(guiElement, oParams, bIsFolder = False, iTotal = total)
+    oGui.setView('movie')
+    oGui.setEndOfDirectory()
+
+# Show a hoster dialog for a requested episode
 def showHosters():
     oParams= ParameterHandler()
-    sTitle = oParams.getValue('Title')	
+    sTitle = oParams.getValue('Title')
     seriesId = oParams.getValue('seriesID')
     season = oParams.getValue('Season')
     episode = oParams.getValue('EpisodeNr')
-    
-    sHtmlContent = _getContent("series/%s/%s/%s" % (seriesId,season,episode))
-    data = json.loads(sHtmlContent)
 
+    data = _getJsonContent("series/%s/%s/%s" % (seriesId, season, episode))
     hosters = []
     for link in data['links']:
         hoster = dict()
-        hoster['link'] = URL_MAIN + 'watch/'+ link['id'] 
+        hoster['link'] = URL_MAIN + 'watch/' + link['id']
         hoster['name'] = link['hoster']
         hoster['displayedName'] = link['hoster']
         hosters.append(hoster)
@@ -182,14 +210,13 @@ def showHosters():
         hosters.append('getHosterUrl')
     return hosters
 
+# Load a url for a requested host
 def getHosterUrl(sUrl = False):
     oParams = ParameterHandler()
     #sTitle = oParams.getValue('Title')
     #sHoster = oParams.getValue('Hoster')
-    if not sUrl:
-        sUrl = oParams.getValue('url')
-    sHtmlContent = _getContent(sUrl.replace(URL_MAIN,''))
-    data = json.loads(sHtmlContent)
+    if not sUrl: sUrl = oParams.getValue('url')
+    data = _getJsonContent(sUrl.replace(URL_MAIN, ''))
 
     results = []
     result = {}
