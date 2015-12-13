@@ -15,6 +15,7 @@ from resources.lib import jsunprotect
 SITE_IDENTIFIER = 'kinox_to'
 SITE_NAME = 'Kinox.to'
 SITE_ICON = 'kinox.png'
+SITE_SETTINGS = '<setting default="kinox.to" enable="!eq(-1,false)" id="kinox_to-domain" label="Kinox domain" type="labelenum" values="kinox.to|kinox.me|kinox.tv" />'
 oConfig = cConfig()
 domain = oConfig.getSetting('kinox_to-domain')
 
