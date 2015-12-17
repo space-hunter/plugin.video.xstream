@@ -292,7 +292,7 @@ def searchGlobal():
             dialog.update(count*100/numPlugins,'Searching: '+str(pluginEntry['name'])+'...')
             count += 1
             logger.info('Searching for %s at %s' % (sSearchText, pluginEntry['id']))
-            t = threading.Thread(target=pluginSearch, args=(pluginEntry,sSearchText))
+            t = threading.Thread(target=_pluginSearch, args=(pluginEntry,sSearchText,oGui))
             threads += [t]
             t.start()
         for t in threads: 
@@ -303,7 +303,7 @@ def searchGlobal():
     return True
 
 def searchAlter(params):
-    searchText = params.getValue('searchTitle')
+    searchTitle = params.getValue('searchTitle')
     searchImdbId = params.getValue('searchImdbID')
     searchYear = params.getValue('searchYear')
     import threading
@@ -318,8 +318,8 @@ def searchAlter(params):
     for pluginEntry in aPlugins:
         dialog.update(count*100/numPlugins,'Searching: '+str(pluginEntry['name'])+'...')
         count += 1
-        logger.info('Searching for ' + searchText + pluginEntry['id'].encode('utf-8'))
-        t = threading.Thread(target=pluginSearch, args=(pluginEntry,searchText, oGui))
+        logger.info('Searching for ' + searchTitle + pluginEntry['id'].encode('utf-8'))
+        t = threading.Thread(target=_pluginSearch, args=(pluginEntry,searchTitle, oGui))
         threads += [t]
         t.start()
     for t in threads: 
@@ -329,7 +329,7 @@ def searchAlter(params):
     filteredResults = []
     for result in oGui.searchResults:
         print 'Site: %s Titel: %s' % (result.getSiteName(), result.getTitle())
-        if not searchText in result.getTitle(): continue
+        if not searchTitle in result.getTitle(): continue
         if result.getYear() and result.getYear() != year: continue
         if result.getItemProperties().get('imdbID',False) and result.getItemProperties().get('imdbID',False) != searchImdbId: continue
         filteredResults.append(result)
@@ -343,7 +343,7 @@ def searchAlter(params):
     return True
 
 
-def pluginSearch(pluginEntry, sSearchText, oGui):
+def _pluginSearch(pluginEntry, sSearchText, oGui):
     try:
         plugin = __import__(pluginEntry['id'], globals(), locals())
         function = getattr(plugin, '_search')
