@@ -23,17 +23,19 @@ class cPluginHandler:
         update = False
         fileNames = self.__getFileNamesFromFolder(self.defaultFolder)
         for fileName in fileNames:
+            plugin = {'name':'', 'icon':'', 'settings':'','modified':0}
+            plugin.update(pluginDB[fileName])
             try:
                 modTime = os.path.getmtime( os.path.join(self.defaultFolder,fileName+'.py'))
             except OSError:
                 modTime = 0
-            if fileName not in pluginDB or modTime > pluginDB[fileName]['modified']:
+            if fileName not in pluginDB or modTime > plugin['modified']:
                 logger.info('load plugin: '+ str(fileName))
                 # try to import plugin
-                aPlugin = self.__getPluginData(fileName)
-                aPlugin['modified'] = modTime
-                if aPlugin:
-                    pluginDB[fileName] = aPlugin
+                pluginData = self.__getPluginData(fileName)
+                if pluginData:
+                    pluginData['modified'] = modTime
+                    pluginDB[fileName] = pluginData
                     update = True
         # check pluginDB for obsolete entries
         deletions = []
@@ -58,19 +60,14 @@ class cPluginHandler:
         for pluginID in pluginDB:
             plugin = pluginDB[pluginID]
             pluginSettingsName = 'plugin_%s' % pluginID
+            plugin['id'] = pluginID
             if plugin['icon']:
                 plugin['icon'] = os.path.join(iconFolder, plugin['icon'])
             else:
                 plugin['icon'] = ''
             # existieren zu diesem plugin die an/aus settings
-            bPlugin = oConfig.getSetting(pluginSettingsName)
-            if bPlugin:
-                # settings gefunden
-                if bPlugin == 'true':
+            if oConfig.getSetting(pluginSettingsName) == 'true':
                     plugins.append(plugin)
-            else:
-                # settings nicht gefunden, also schalten wir es trotzdem sichtbar
-                plugins.append(plugin)
         return plugins
 
     def __updatePluginDB(self, data):
@@ -142,8 +139,6 @@ class cPluginHandler:
         return aNameList
 
     def __getPluginData(self, fileName):
-        pluginData = {}
-        pluginData['id'] = fileName
         try:
             plugin = __import__(fileName, globals(), locals())
             pluginData['name'] = plugin.SITE_NAME                       
@@ -153,9 +148,9 @@ class cPluginHandler:
         try:
             pluginData['icon'] = plugin.SITE_ICON
         except:
-            pluginData['icon'] = ''
+            pass
         try:
             pluginData['settings'] = plugin.SITE_SETTINGS
         except:
-            pluginData['settings'] = ''
+            pass
         return pluginData
