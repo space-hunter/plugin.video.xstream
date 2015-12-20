@@ -44,9 +44,9 @@ def load():
     logger.info("Load %s" % SITE_NAME)
 
     sSecurityValue = __getSecurityCookieValue()
-    if not sSecurityValue: pass
     oParams = ParameterHandler()
-    oParams.setParam('securityCookie', sSecurityValue)
+    if sSecurityValue:
+        oParams.setParam('securityCookie', sSecurityValue)
     ## Create all main menu entries
     oGui = cGui()
 
@@ -154,8 +154,11 @@ def __getHtmlContent(sUrl = None, sSecurityValue = None):
     elif sUrl is None:
         sUrl = oParams.getValue('sUrl')
     # Test if a security value is available
-    if sSecurityValue is None and oParams.exist("securityCookie"):
-        sSecurityValue = oParams.getValue("securityCookie")
+    if sSecurityValue is None:
+        if oParams.exist("securityCookie"):
+            sSecurityValue = oParams.getValue("securityCookie")
+        else:
+            sSecurityValue = ''
     # preferred language
     sPrefLang = __getPreferredLanguage()
     # Make the request
