@@ -139,6 +139,7 @@ class cPluginHandler:
         return aNameList
 
     def __getPluginData(self, fileName):
+        pluginData = {}
         try:
             plugin = __import__(fileName, globals(), locals())
             pluginData['name'] = plugin.SITE_NAME                       
