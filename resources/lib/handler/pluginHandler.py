@@ -24,7 +24,6 @@ class cPluginHandler:
         fileNames = self.__getFileNamesFromFolder(self.defaultFolder)
         for fileName in fileNames:
             plugin = {'name':'', 'icon':'', 'settings':'','modified':0}
-            plugin.update(pluginDB[fileName])
             try:
                 modTime = os.path.getmtime( os.path.join(self.defaultFolder,fileName+'.py'))
             except OSError:
@@ -37,6 +36,7 @@ class cPluginHandler:
                     pluginData['modified'] = modTime
                     pluginDB[fileName] = pluginData
                     update = True
+            plugin.update(pluginDB[fileName])
         # check pluginDB for obsolete entries
         deletions = []
         for pluginID in pluginDB:
@@ -50,7 +50,7 @@ class cPluginHandler:
 
         return self.getAvailablePluginsFromDB()
 
-        
+
 
     def getAvailablePluginsFromDB(self):
         plugins = []
@@ -61,7 +61,7 @@ class cPluginHandler:
             plugin = pluginDB[pluginID]
             pluginSettingsName = 'plugin_%s' % pluginID
             plugin['id'] = pluginID
-            if plugin['icon']:
+            if 'icon' in plugin:
                 plugin['icon'] = os.path.join(iconFolder, plugin['icon'])
             else:
                 plugin['icon'] = ''
@@ -105,7 +105,7 @@ class cPluginHandler:
             return False
         pluginElements = pluginElem.findall('setting')
         for elem in pluginElements:
-            pluginElem.remove(elem)          
+            pluginElem.remove(elem)
         # add plugins to settings
         for pluginID in sorted(pluginData):
             plugin = pluginData[pluginID]
@@ -114,7 +114,7 @@ class cPluginHandler:
             attrib['id'] = 'plugin_%s' % pluginID
             attrib['label'] = plugin['name']
             ET.SubElement(pluginElem, 'setting', attrib)
-            if plugin['settings']:
+            if 'settings' in plugin:
                 customSettings = []
                 try:
                     customSettings = ET.XML(xmlString % plugin['settings']).findall('setting')
@@ -142,7 +142,7 @@ class cPluginHandler:
         pluginData = {}
         try:
             plugin = __import__(fileName, globals(), locals())
-            pluginData['name'] = plugin.SITE_NAME                       
+            pluginData['name'] = plugin.SITE_NAME
         except Exception, e:
             logger.error("Can't import plugin: %s :%s" % (fileName, e))
             return False
