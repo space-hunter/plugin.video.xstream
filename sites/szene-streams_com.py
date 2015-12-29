@@ -23,6 +23,10 @@ def load():
 
 def showMovieMenu():
     oGui = cGui()
+    params = ParameterHandler()
+    params.setParam('sUrl', URL_MOVIES)
+    params.setParam('mediaTypePageId', 1)
+    oGui.addFolder(cGuiElement('Alle Filme', SITE_IDENTIFIER, 'showMovies'), params)
     oGui.addFolder(cGuiElement('Genre', SITE_IDENTIFIER, 'showMovieGenre'))
     oGui.setEndOfDirectory()
 
