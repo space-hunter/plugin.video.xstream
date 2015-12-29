@@ -24,6 +24,7 @@ class cPluginHandler:
         fileNames = self.__getFileNamesFromFolder(self.defaultFolder)
         for fileName in fileNames:
             plugin = {'name':'', 'icon':'', 'settings':'','modified':0}
+            plugin.update(pluginDB[fileName])
             try:
                 modTime = os.path.getmtime( os.path.join(self.defaultFolder,fileName+'.py'))
             except OSError:
@@ -36,7 +37,6 @@ class cPluginHandler:
                     pluginData['modified'] = modTime
                     pluginDB[fileName] = pluginData
                     update = True
-            plugin.update(pluginDB[fileName])
         # check pluginDB for obsolete entries
         deletions = []
         for pluginID in pluginDB:
