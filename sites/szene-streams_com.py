@@ -41,11 +41,13 @@ def showMovieGenre():
         if not sUrl or not sNum or not sName: return
         oGuiElement = cGuiElement("%s (%d)" %(sName, int(sNum)), SITE_IDENTIFIER, 'showMovies')
         params.setParam('sUrl', sUrl)
+        params.setParam('mediaTypePageId', 1)
         oGui.addFolder(oGuiElement, params)
     oGui.setEndOfDirectory()
 
 def showMovies():
     oGui = cGui()
+    oGui.setView('movie')
     params = ParameterHandler()
     oRequestHandler = cRequestHandler(params.getValue('sUrl'))
     sHtmlContent = oRequestHandler.request()
@@ -62,7 +64,21 @@ def showMovies():
         oGuiElement.setDescription(sDesc.strip())
         params.setParam('entryUrl', sUrl)
         oGui.addFolder(oGuiElement, params, bIsFolder = False)
-    oGui.setView('movie')
+
+    pattern = '<a class="swchItem" href="([^"]+)".*?><span>(\d+)</span></a>'
+    aResult = cParser().parse(sHtmlContent, pattern)
+    if aResult[0]:
+        currentPage = int(params.getValue('mediaTypePageId'))
+        for sUrl, sPage in aResult[1]:
+            try:
+                page = int(sPage)
+            except:
+                continue
+            if page <= currentPage: continue
+            params.setParam('sUrl', URL_MAIN + sUrl)
+            params.setParam('mediaTypePageId', page)
+            oGui.addNextPage(SITE_IDENTIFIER, 'showMovies', params)
+            break
     oGui.setEndOfDirectory()
 
 # Show the hosters dialog
