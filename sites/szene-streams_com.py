@@ -1,27 +1,22 @@
 # -*- coding: utf-8 -*-
-import urllib
 from resources.lib.gui.gui import cGui
 from resources.lib.gui.guiElement import cGuiElement
 from resources.lib.handler.requestHandler import cRequestHandler
 from resources.lib.parser import cParser
-from resources.lib.util import cUtil
-from resources.lib.config import cConfig
 from resources.lib import logger
-from json import loads
-import re
 from resources.lib.handler.ParameterHandler import ParameterHandler
-from resources.lib import jsunprotect
+from resources.lib.handler.pluginHandler import cPluginHandler
+from resources.lib.util import cUtil
+import re
 
 SITE_IDENTIFIER = 'szene-streams_com'
 SITE_NAME = 'Szene-Streams'
-#SITE_ICON = '1kino.png'
 
 URL_MAIN = 'http://www.szene-streams.com/'
 URL_MOVIES = URL_MAIN + 'publ/'
 
 def load():
     logger.info("Load %s" % SITE_NAME)
-
     oGui = cGui()
     oGui.addFolder(cGuiElement('Filme', SITE_IDENTIFIER, 'showMovieMenu'))
     oGui.setEndOfDirectory()
@@ -61,12 +56,49 @@ def showMovies():
     if not aResult[0]:
         return
     for sThumbnail, sUrl, sName, sDesc in aResult[1]:
-        oGuiElement = cGuiElement(sName, SITE_IDENTIFIER, 'showMovies')
+        oGuiElement = cGuiElement(sName, SITE_IDENTIFIER, 'showHosters')
         oGuiElement.setMediaType('movie')
         oGuiElement.setThumbnail(sThumbnail)
         oGuiElement.setDescription(sDesc.strip())
-        oGui.addFolder(oGuiElement, params)
+        params.setParam('entryUrl', sUrl)
+        oGui.addFolder(oGuiElement, params, bIsFolder = False)
     oGui.setView('movie')
     oGui.setEndOfDirectory()
 
+# Show the hosters dialog
+def showHosters():
+    params= ParameterHandler()
+    oRequestHandler = cRequestHandler(params.getValue('entryUrl'))
+    sHtmlContent = oRequestHandler.request()
+    pattern = '<div class="inner" style="display:none;">'
+    pattern += '.*?<a target="_blank" href="([^"]+)">'
+    aResult = cParser().parse(sHtmlContent, pattern)
+    if not aResult[0]:
+        return
+    hosters = []
+    for sUrl in aResult[1]:
+        logger.info(sUrl)
+        hoster = dict()
+        hoster['link'] = sUrl
+        hname = 'Unknown Hoster'
+        try:
+            hname = re.compile('^(?:https?:\/\/)?(?:[^@\n]+@)?([^:\/\n]+)', flags=re.I | re.M).findall(hoster['link'])[0]
+        except:
+            pass
+        hoster['name'] = hname
+        hoster['displayedName'] = hname
+        hosters.append(hoster)
+    if hosters:
+        hosters.append('getHosterUrl')
+    return hosters
 
+def getHosterUrl(sUrl=False):
+    oParams = ParameterHandler()
+    if not sUrl:
+        sUrl = oParams.getValue('url')
+    results = []
+    result = {}
+    result['streamUrl'] = sUrl
+    result['resolved'] = False
+    results.append(result)
+    return results
