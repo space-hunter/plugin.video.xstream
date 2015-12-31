@@ -35,9 +35,12 @@ def showMovieGenre():
     params = ParameterHandler()
     oRequestHandler = cRequestHandler(URL_MOVIES)
     sHtmlContent = oRequestHandler.request()
-    pattern = '<a class="CatInf" href="([^"]+)">' # Get the URL
-    pattern += '.*?<div class="CatNumInf">([^<>]+)</div>' # Get the entry count
-    pattern += '.*?<div class="CatNameInf">([^<>]+)</div>' # Get the genre name
+    # Get the URL
+    pattern = '<a[^>]*?class="CatInf"[^>]*?href="(.*?)"[^>]*?>.*?'
+     # Get the entry count
+    pattern += '<div[^>]*?class="CatNumInf"[^>]*?>(\d+)</div>.*?'
+    # Get the genre name
+    pattern += '<div[^>]*?class="CatNameInf"[^>]*?>([^<>]+)</div>'
     aResult = cParser().parse(sHtmlContent, pattern)
     if not aResult[0]:
         return
