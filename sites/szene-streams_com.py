@@ -24,8 +24,10 @@ def load():
 def showMovieMenu():
     oGui = cGui()
     params = ParameterHandler()
-    params.setParam('sUrl', URL_MOVIES)
     params.setParam('mediaTypePageId', 1)
+    params.setParam('sUrl', URL_MAIN)
+    oGui.addFolder(cGuiElement('Neue Filme', SITE_IDENTIFIER, 'showMovies'), params)
+    params.setParam('sUrl', URL_MOVIES)
     oGui.addFolder(cGuiElement('Alle Filme', SITE_IDENTIFIER, 'showMovies'), params)
     oGui.addFolder(cGuiElement('Genre', SITE_IDENTIFIER, 'showMovieGenre'))
     oGui.setEndOfDirectory()
@@ -58,13 +60,18 @@ def showMovies():
     params = ParameterHandler()
     oRequestHandler = cRequestHandler(params.getValue('sUrl'))
     sHtmlContent = oRequestHandler.request()
-    pattern = '<div class="screenshot".*?<a href="([^"]+)" class="ulightbox"'
-    pattern += '.*?<a class="newstitl entryLink".*?href="([^"]+)">([^<>]+)</a>'
+    # Grab the thumbnail
+    pattern = '<div class="screenshot".*?<a href="([^"]+)"'
+    # Grab the name and link
+    pattern += '.*?<a class="[^"]*?entryLink[^"]*?".*?href="([^"]+)">(.*?)</a>'
+    # Grab the description
     pattern += '.*?<div class="MessWrapsNews2".*?>([^<>]+).*?</div>'
     aResult = cParser().parse(sHtmlContent, pattern)
     if not aResult[0]:
         return
     for sThumbnail, sUrl, sName, sDesc in aResult[1]:
+        # Remove HTML tags from the name
+        sName = re.sub('<[^<]+?>', '', sName)
         oGuiElement = cGuiElement(sName, SITE_IDENTIFIER, 'showHosters')
         oGuiElement.setMediaType('movie')
         oGuiElement.setThumbnail(sThumbnail)
@@ -77,10 +84,7 @@ def showMovies():
     if aResult[0]:
         currentPage = int(params.getValue('mediaTypePageId'))
         for sUrl, sPage in aResult[1]:
-            try:
-                page = int(sPage)
-            except:
-                continue
+            page = int(sPage)
             if page <= currentPage: continue
             params.setParam('sUrl', URL_MAIN + sUrl)
             params.setParam('mediaTypePageId', page)
