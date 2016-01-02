@@ -31,6 +31,7 @@ def showMovieMenu():
     params.setParam('sUrl', URL_MOVIES)
     oGui.addFolder(cGuiElement('Alle Filme', SITE_IDENTIFIER, 'showEntries'), params)
     oGui.addFolder(cGuiElement('Genre', SITE_IDENTIFIER, 'showGenre'), params)
+    oGui.addFolder(cGuiElement('Suche', SITE_IDENTIFIER, 'showMovieSearch'))
     oGui.setEndOfDirectory()
 
 def showTvShowMenu():
@@ -40,6 +41,7 @@ def showTvShowMenu():
     params.setParam('sUrl', URL_SHOWS)
     oGui.addFolder(cGuiElement('Alle Serien', SITE_IDENTIFIER, 'showEntries'), params)
     oGui.addFolder(cGuiElement('Genre', SITE_IDENTIFIER, 'showGenre'), params)
+    oGui.addFolder(cGuiElement('Suche', SITE_IDENTIFIER, 'showTvShowSearch'))
     oGui.setEndOfDirectory()
 
 def showGenre():
@@ -148,6 +150,22 @@ def showSearch():
     sSearchText = oGui.showKeyBoard()
     if not sSearchText: return
     _search(oGui, sSearchText)
+    oGui.setEndOfDirectory()
+
+def showMovieSearch():
+    oGui = cGui()
+    sSearchText = oGui.showKeyBoard()
+    if not sSearchText: return
+    data = getSearchResult(sSearchText, URL_MOVIES)
+    showEntries(data)
+    oGui.setEndOfDirectory()
+
+def showTvShowSearch():
+    oGui = cGui()
+    sSearchText = oGui.showKeyBoard()
+    if not sSearchText: return
+    data = getSearchResult(sSearchText, URL_SHOWS)
+    showEntries(data)
     oGui.setEndOfDirectory()
 
 def getHosterUrl(sUrl = False):
