@@ -7,7 +7,7 @@ from resources.lib import logger
 from resources.lib.handler.ParameterHandler import ParameterHandler
 from resources.lib.handler.pluginHandler import cPluginHandler
 from resources.lib.util import cUtil
-import re
+import re, urllib, urllib2
 
 SITE_IDENTIFIER = 'szene-streams_com'
 SITE_NAME = 'Szene-Streams'
@@ -30,6 +30,7 @@ def showMovieMenu():
     params.setParam('sUrl', URL_MOVIES)
     oGui.addFolder(cGuiElement('Alle Filme', SITE_IDENTIFIER, 'showMovies'), params)
     oGui.addFolder(cGuiElement('Genre', SITE_IDENTIFIER, 'showMovieGenre'))
+    oGui.addFolder(cGuiElement('Suche', SITE_IDENTIFIER, 'showSearch'))
     oGui.setEndOfDirectory()
 
 def showMovieGenre():
@@ -54,12 +55,15 @@ def showMovieGenre():
         oGui.addFolder(oGuiElement, params)
     oGui.setEndOfDirectory()
 
-def showMovies():
+def showMovies(sContent = False):
     oGui = cGui()
     oGui.setView('movie')
     params = ParameterHandler()
-    oRequestHandler = cRequestHandler(params.getValue('sUrl'))
-    sHtmlContent = oRequestHandler.request()
+    if sContent:
+        sHtmlContent = sContent
+    else:
+        oRequestHandler = cRequestHandler(params.getValue('sUrl'))
+        sHtmlContent = oRequestHandler.request()
     # Grab the thumbnail
     pattern = '<div class="screenshot".*?<a href="([^"]+)"'
     # Grab the name and link
@@ -119,7 +123,15 @@ def showHosters():
         hosters.append('getHosterUrl')
     return hosters
 
-def getHosterUrl(sUrl=False):
+# Show the search dialog, return/abort on empty input
+def showSearch():
+    oGui = cGui()
+    sSearchText = oGui.showKeyBoard()
+    if not sSearchText: return
+    _search(oGui, sSearchText)
+    oGui.setEndOfDirectory()
+
+def getHosterUrl(sUrl = False):
     oParams = ParameterHandler()
     if not sUrl:
         sUrl = oParams.getValue('url')
@@ -129,3 +141,16 @@ def getHosterUrl(sUrl=False):
     result['resolved'] = False
     results.append(result)
     return results
+
+# Search using the requested string sSearchText
+def _search(oGui, sSearchText):
+    if not sSearchText: return
+    sFullSearchUrl = URL_MOVIES + ("?q=%s" % sSearchText)
+    logger.info("Search URL: %s" % sFullSearchUrl)
+    req = urllib2.Request(URL_MOVIES)
+    req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
+    values = { 'query' : sSearchText, 'a' : '2' }
+    response = urllib2.urlopen(req, urllib.urlencode(values))
+    data = response.read()
+    response.close()
+    showMovies(data)
