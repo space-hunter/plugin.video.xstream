@@ -66,8 +66,8 @@ def showGenre():
         oGui.addFolder(oGuiElement, params)
     oGui.setEndOfDirectory()
 
-def showEntries(sContent = False):
-    oGui = cGui()
+def showEntries(sContent = False, sGui = False):
+    oGui = sGui if sGui else cGui()
     oGui.setView('movie')
     params = ParameterHandler()
     if sContent:
@@ -105,7 +105,8 @@ def showEntries(sContent = False):
             params.setParam('mediaTypePageId', page)
             oGui.addNextPage(SITE_IDENTIFIER, 'showEntries', params)
             break
-    oGui.setEndOfDirectory()
+    if not sGui:
+        oGui.setEndOfDirectory()
 
 # Show the hosters dialog
 def showHosters():
@@ -157,7 +158,7 @@ def showMovieSearch():
     sSearchText = oGui.showKeyBoard()
     if not sSearchText: return
     data = getSearchResult(sSearchText, URL_MOVIES)
-    showEntries(data)
+    showEntries(data, oGui)
     oGui.setEndOfDirectory()
 
 def showTvShowSearch():
@@ -165,7 +166,7 @@ def showTvShowSearch():
     sSearchText = oGui.showKeyBoard()
     if not sSearchText: return
     data = getSearchResult(sSearchText, URL_SHOWS)
-    showEntries(data)
+    showEntries(data, oGui)
     oGui.setEndOfDirectory()
 
 def getHosterUrl(sUrl = False):
@@ -187,7 +188,8 @@ def _search(oGui, sSearchText):
     if not sSearchText: return
     data = getSearchResult(sSearchText, URL_MOVIES)
     data += getSearchResult(sSearchText, URL_SHOWS)
-    showEntries(data)
+    showEntries(data, oGui)
+    oGui.setEndOfDirectory()
 
 def getSearchResult(sSearchText, url):
     req = urllib2.Request(url)
