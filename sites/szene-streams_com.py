@@ -123,7 +123,7 @@ def showHosters():
         hoster['link'] = sUrl
         hname = 'Unknown Hoster'
         try:
-            hname = re.compile('^(?:https?:\/\/)?(?:[^@\n]+@)?([^:\/\n]+)', flags=re.I | re.M).findall(hoster['link'])[0]
+            hname = getHosterName(hoster['link'])
         except:
             pass
         if hname == 'linkcrypt.ws':
@@ -156,6 +156,9 @@ def getHosterUrl(sUrl = False):
     results.append(result)
     return results
 
+def getHosterName(name):
+    return re.compile('^(?:https?:\/\/)?(?:[^@\n]+@)?([^:\/\n]+)', flags=re.I | re.M).findall(name)[0]
+
 # Search using the requested string sSearchText
 def _search(oGui, sSearchText):
     if not sSearchText: return
@@ -182,7 +185,7 @@ def resolveLinkcrypt(sUrl, hosters):
             req = urllib2.Request("http://linkcrypt.ws/out.html", data)
             res = urllib2.urlopen(req).read()
             link = re.compile("top.location.href=doNotTrack\('(.+?)'\)").findall(res)[0]
-            hname = re.compile('^(?:https?:\/\/)?(?:[^@\n]+@)?([^:\/\n]+)', flags=re.I | re.M).findall(link)[0]
+            hname = getHosterName(link)
             hname = "Part %d - %s" % (idx + 1, hname)
             logger.info("Resolved LinkCrypt link: %s" % link)
             hoster = dict()
