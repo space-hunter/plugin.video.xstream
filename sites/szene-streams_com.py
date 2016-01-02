@@ -14,11 +14,13 @@ SITE_NAME = 'Szene-Streams'
 
 URL_MAIN = 'http://www.szene-streams.com/'
 URL_MOVIES = URL_MAIN + 'publ/'
+URL_SHOWS = URL_MAIN + 'load/'
 
 def load():
     logger.info("Load %s" % SITE_NAME)
     oGui = cGui()
     oGui.addFolder(cGuiElement('Filme', SITE_IDENTIFIER, 'showMovieMenu'))
+    oGui.addFolder(cGuiElement('Serien', SITE_IDENTIFIER, 'showTvShowMenu'))
     oGui.setEndOfDirectory()
 
 def showMovieMenu():
@@ -26,17 +28,26 @@ def showMovieMenu():
     params = ParameterHandler()
     params.setParam('mediaTypePageId', 1)
     params.setParam('sUrl', URL_MAIN)
-    oGui.addFolder(cGuiElement('Neue Filme', SITE_IDENTIFIER, 'showMovies'), params)
+    oGui.addFolder(cGuiElement('Neue Filme', SITE_IDENTIFIER, 'showEntries'), params)
     params.setParam('sUrl', URL_MOVIES)
-    oGui.addFolder(cGuiElement('Alle Filme', SITE_IDENTIFIER, 'showMovies'), params)
-    oGui.addFolder(cGuiElement('Genre', SITE_IDENTIFIER, 'showMovieGenre'))
+    oGui.addFolder(cGuiElement('Alle Filme', SITE_IDENTIFIER, 'showEntries'), params)
+    oGui.addFolder(cGuiElement('Genre', SITE_IDENTIFIER, 'showGenre'), params)
     oGui.addFolder(cGuiElement('Suche', SITE_IDENTIFIER, 'showSearch'))
     oGui.setEndOfDirectory()
 
-def showMovieGenre():
+def showTvShowMenu():
     oGui = cGui()
     params = ParameterHandler()
-    oRequestHandler = cRequestHandler(URL_MOVIES)
+    params.setParam('mediaTypePageId', 1)
+    params.setParam('sUrl', URL_SHOWS)
+    oGui.addFolder(cGuiElement('Alle Serien', SITE_IDENTIFIER, 'showEntries'), params)
+    oGui.addFolder(cGuiElement('Genre', SITE_IDENTIFIER, 'showGenre'), params)
+    oGui.setEndOfDirectory()
+
+def showGenre():
+    oGui = cGui()
+    params = ParameterHandler()
+    oRequestHandler = cRequestHandler(params.getValue('sUrl'))
     sHtmlContent = oRequestHandler.request()
     # Get the URL
     pattern = '<a[^>]*?class="CatInf"[^>]*?href="(.*?)"[^>]*?>.*?'
@@ -49,13 +60,13 @@ def showMovieGenre():
         return
     for sUrl, sNum, sName in aResult[1]:
         if not sUrl or not sNum or not sName: return
-        oGuiElement = cGuiElement("%s (%d)" %(sName, int(sNum)), SITE_IDENTIFIER, 'showMovies')
+        oGuiElement = cGuiElement("%s (%d)" %(sName, int(sNum)), SITE_IDENTIFIER, 'showEntries')
         params.setParam('sUrl', sUrl)
         params.setParam('mediaTypePageId', 1)
         oGui.addFolder(oGuiElement, params)
     oGui.setEndOfDirectory()
 
-def showMovies(sContent = False):
+def showEntries(sContent = False):
     oGui = cGui()
     oGui.setView('movie')
     params = ParameterHandler()
@@ -92,7 +103,7 @@ def showMovies(sContent = False):
             if page <= currentPage: continue
             params.setParam('sUrl', URL_MAIN + sUrl)
             params.setParam('mediaTypePageId', page)
-            oGui.addNextPage(SITE_IDENTIFIER, 'showMovies', params)
+            oGui.addNextPage(SITE_IDENTIFIER, 'showEntries', params)
             break
     oGui.setEndOfDirectory()
 
@@ -145,12 +156,10 @@ def getHosterUrl(sUrl = False):
 # Search using the requested string sSearchText
 def _search(oGui, sSearchText):
     if not sSearchText: return
-    sFullSearchUrl = URL_MOVIES + ("?q=%s" % sSearchText)
-    logger.info("Search URL: %s" % sFullSearchUrl)
     req = urllib2.Request(URL_MOVIES)
     req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
     values = { 'query' : sSearchText, 'a' : '2' }
     response = urllib2.urlopen(req, urllib.urlencode(values))
     data = response.read()
     response.close()
-    showMovies(data)
+    showEntries(data)
