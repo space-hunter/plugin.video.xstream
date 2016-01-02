@@ -118,6 +118,8 @@ def showHosters():
     if not aResult[0]:
         return
     hosters = []
+    idx = 0
+    previousName = ''
     for sUrl in aResult[1]:
         hoster = dict()
         hoster['link'] = sUrl
@@ -129,6 +131,11 @@ def showHosters():
         if hname == 'linkcrypt.ws':
             resolveLinkcrypt(sUrl, hosters)
             continue
+        if previousName != hname:
+            idx = 1
+        previousName = hname
+        hname = "Part %d - %s" % (idx, hname)
+        idx += 1
 
         hoster['name'] = hname
         hoster['displayedName'] = hname
