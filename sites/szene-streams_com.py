@@ -21,6 +21,7 @@ def load():
     oGui = cGui()
     oGui.addFolder(cGuiElement('Filme', SITE_IDENTIFIER, 'showMovieMenu'))
     oGui.addFolder(cGuiElement('Serien', SITE_IDENTIFIER, 'showTvShowMenu'))
+    oGui.addFolder(cGuiElement('Suche', SITE_IDENTIFIER, 'showSearch'))
     oGui.setEndOfDirectory()
 
 def showMovieMenu():
@@ -30,7 +31,6 @@ def showMovieMenu():
     params.setParam('sUrl', URL_MOVIES)
     oGui.addFolder(cGuiElement('Alle Filme', SITE_IDENTIFIER, 'showEntries'), params)
     oGui.addFolder(cGuiElement('Genre', SITE_IDENTIFIER, 'showGenre'), params)
-    oGui.addFolder(cGuiElement('Suche', SITE_IDENTIFIER, 'showSearch'))
     oGui.setEndOfDirectory()
 
 def showTvShowMenu():
@@ -167,13 +167,18 @@ def getHosterName(name):
 # Search using the requested string sSearchText
 def _search(oGui, sSearchText):
     if not sSearchText: return
-    req = urllib2.Request(URL_MOVIES)
+    data = getSearchResult(sSearchText, URL_MOVIES)
+    data += getSearchResult(sSearchText, URL_SHOWS)
+    showEntries(data)
+
+def getSearchResult(sSearchText, url):
+    req = urllib2.Request(url)
     req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
     values = { 'query' : sSearchText, 'a' : '2' }
     response = urllib2.urlopen(req, urllib.urlencode(values))
     data = response.read()
     response.close()
-    showEntries(data)
+    return data
 
 # Taken and modified from pyLoad module/plugins/crypter/LinkCryptWs.py
 def resolveLinkcrypt(sUrl, hosters):
