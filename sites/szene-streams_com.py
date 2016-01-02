@@ -119,7 +119,6 @@ def showHosters():
         return
     hosters = []
     for sUrl in aResult[1]:
-        logger.info(sUrl)
         hoster = dict()
         hoster['link'] = sUrl
         hname = 'Unknown Hoster'
@@ -127,6 +126,10 @@ def showHosters():
             hname = re.compile('^(?:https?:\/\/)?(?:[^@\n]+@)?([^:\/\n]+)', flags=re.I | re.M).findall(hoster['link'])[0]
         except:
             pass
+        if hname == 'linkcrypt.ws':
+            resolveLinkcrypt(sUrl, hosters)
+            continue
+
         hoster['name'] = hname
         hoster['displayedName'] = hname
         hosters.append(hoster)
@@ -163,3 +166,30 @@ def _search(oGui, sSearchText):
     data = response.read()
     response.close()
     showEntries(data)
+
+# Taken and modified from pyLoad module/plugins/crypter/LinkCryptWs.py
+def resolveLinkcrypt(sUrl, hosters):
+    oRequestHandler = cRequestHandler(sUrl)
+    sHtmlContent = oRequestHandler.request()
+    pattern = '<form action="http://linkcrypt.ws/out.html"[^>]*?>.*?<input[^>]*?value="(.+?)"[^>]*?name="file"'
+    aResult = cParser().parse(sHtmlContent, pattern)
+    if not aResult[0]:
+        return
+
+    for idx, weblink_id in enumerate(aResult[1]):
+        try:
+            data = urllib.urlencode({ 'file' : weblink_id })
+            req = urllib2.Request("http://linkcrypt.ws/out.html", data)
+            res = urllib2.urlopen(req).read()
+            link = re.compile("top.location.href=doNotTrack\('(.+?)'\)").findall(res)[0]
+            hname = re.compile('^(?:https?:\/\/)?(?:[^@\n]+@)?([^:\/\n]+)', flags=re.I | re.M).findall(link)[0]
+            hname = "Part %d - %s" % (idx + 1, hname)
+            logger.info("Resolved LinkCrypt link: %s" % link)
+            hoster = dict()
+            hoster['link'] = link
+            hoster['name'] = hname
+            hoster['displayedName'] = hname
+            hosters.append(hoster)
+        except Exception, detail:
+            logger.info(detail)
+            pass
