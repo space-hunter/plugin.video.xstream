@@ -27,8 +27,6 @@ def showMovieMenu():
     oGui = cGui()
     params = ParameterHandler()
     params.setParam('mediaTypePageId', 1)
-    params.setParam('sUrl', URL_MAIN)
-    oGui.addFolder(cGuiElement('Neue Filme', SITE_IDENTIFIER, 'showEntries'), params)
     params.setParam('sUrl', URL_MOVIES)
     oGui.addFolder(cGuiElement('Alle Filme', SITE_IDENTIFIER, 'showEntries'), params)
     oGui.addFolder(cGuiElement('Genre', SITE_IDENTIFIER, 'showGenre'), params)
