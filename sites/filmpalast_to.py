@@ -148,9 +148,10 @@ def __checkUrl(url):
     return url if 'http:' in url else URL_MAIN + url
 
 def __getSource(id):
-    url = URL_STREAM % int(id)
-    from t0mm0.common.net import Net
-    idValue = { 'streamID' : id }
-    headValue = { 'Referer' : URL_MAIN, 'X-Requested-With':'XMLHttpRequest' }
-    data = Net().http_POST(url, idValue, headValue).content
+    oRequest = cRequestHandler(URL_STREAM % int(id))
+    oRequest.addParameters('streamID', id)
+    oRequest.addHeaderEntry('Referer', URL_MAIN)
+    oRequest.addHeaderEntry('X-Requested-With', 'XMLHttpRequest')
+    oRequest.setRequestType(oRequest.REQUEST_TYPE_POST)
+    data = oRequest.request()
     return re.compile('"url":"([^"]+)"').findall(data)[0].replace('\\', '')
