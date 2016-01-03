@@ -157,4 +157,6 @@ def __getSource(id):
     oRequest.addHeaderEntry('X-Requested-With', 'XMLHttpRequest')
     oRequest.setRequestType(oRequest.REQUEST_TYPE_POST)
     data = json.loads(oRequest.request())
-    return data['url'] if int(data['error']) == 0 else False
+    if 'error' in data and int(data['error']) == 0 and 'url' in data:
+        return data['url']
+    return False
