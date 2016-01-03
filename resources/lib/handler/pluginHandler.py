@@ -23,7 +23,7 @@ class cPluginHandler:
         update = False
         fileNames = self.__getFileNamesFromFolder(self.defaultFolder)
         for fileName in fileNames:
-            plugin = { 'name' : '', 'icon' : '', 'settings' : '', 'modified' : 0 }
+            plugin = {'name':'', 'icon':'', 'settings':'', 'modified':0}
             if fileName in pluginDB:
                 plugin.update(pluginDB[fileName])
             try:
@@ -107,11 +107,13 @@ class cPluginHandler:
         # add plugins to settings
         for pluginID in sorted(pluginData):
             plugin = pluginData[pluginID]
-            ET.SubElement(pluginElem,'setting', {'type': 'lsep', 'label':plugin['name']})
+            subEl = ET.SubElement(pluginElem,'setting', {'type': 'lsep', 'label':plugin['name']})
+            subEl.tail = '\n\t'
             attrib = {'default': 'false', 'type': 'bool'}
             attrib['id'] = 'plugin_%s' % pluginID
             attrib['label'] = plugin['name']
-            ET.SubElement(pluginElem, 'setting', attrib)
+            subEl = ET.SubElement(pluginElem, 'setting', attrib)
+            subEl.tail = '\n\t'
             if 'settings' in plugin:
                 customSettings = []
                 try:
@@ -119,7 +121,9 @@ class cPluginHandler:
                 except:
                     logger.info('Parsing of custom settings for % failed.' % plugin['name'])
                 for setting in customSettings:
+                    setting.tail = '\n\t'
                     pluginElem.append(setting)
+        pluginElements = pluginElem.findall('setting')[-1].tail = '\n'
         try:
             ET.dump(pluginElem)
         except:
