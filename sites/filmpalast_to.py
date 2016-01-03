@@ -30,6 +30,7 @@ def load():
     params.setParam('sUrl', URL_MOVIES_TOP)
     oGui.addFolder(cGuiElement('Top Filme', SITE_IDENTIFIER, 'showEntries'), params)
     oGui.addFolder(cGuiElement('Genre', SITE_IDENTIFIER, 'showGenre'))
+    oGui.addFolder(cGuiElement('A-Z', SITE_IDENTIFIER, 'showAlphaNumeric'))
     oGui.setEndOfDirectory()
 
 def showGenre():
@@ -40,6 +41,25 @@ def showGenre():
     # Get the URL and genre name
     # <section id="genre">
     pattern = '<section id="genre">(.*?)</section>'
+    aResult = cParser().parse(sHtmlContent, pattern)
+    if not aResult[0]: return
+    pattern = '<a[^>]*href="([^"]*)">[ ]*([^<]*)</a>'
+    aResult = cParser().parse(aResult[1][0], pattern)
+    if not aResult[0]: return
+    for sUrl, sName in aResult[1]:
+        oGuiElement = cGuiElement(sName, SITE_IDENTIFIER, 'showEntries')
+        params.setParam('sUrl', sUrl)
+        oGui.addFolder(oGuiElement, params)
+    oGui.setEndOfDirectory()
+
+def showAlphaNumeric():
+    oGui = cGui()
+    params = ParameterHandler()
+    oRequestHandler = cRequestHandler(URL_MAIN)
+    sHtmlContent = oRequestHandler.request()
+    # Get the URL and genre name
+    # <section id="genre">
+    pattern = '<section id="movietitle">(.*?)</section>'
     aResult = cParser().parse(sHtmlContent, pattern)
     if not aResult[0]: return
     pattern = '<a[^>]*href="([^"]*)">[ ]*([^<]*)</a>'
