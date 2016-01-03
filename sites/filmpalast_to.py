@@ -9,7 +9,6 @@ from resources.lib.handler.ParameterHandler import ParameterHandler
 from resources.lib.handler.pluginHandler import cPluginHandler
 from resources.lib.util import cUtil
 import json
-import re
 
 SITE_IDENTIFIER = 'filmpalast_to'
 SITE_NAME = 'FilmPalast.to'
@@ -17,9 +16,9 @@ SITE_ICON = 'filmpalast.png'
 
 URL_MAIN = 'http://www.filmpalast.to/'
 URL_STREAM = URL_MAIN + 'stream/%d/1'
-URL_MOVIES_NEW = URL_MAIN + 'movies/new'
-URL_MOVIES_TOP = URL_MAIN + 'movies/top'
-URL_SHOWS_NEW = URL_MAIN + 'serien/view'
+URL_MOVIES_NEW = URL_MAIN + 'movies/new/'
+URL_MOVIES_TOP = URL_MAIN + 'movies/top/'
+URL_SHOWS_NEW = URL_MAIN + 'serien/view/'
 URL_SEARCH = URL_MAIN + 'search/title/'
 
 def load():
@@ -40,8 +39,8 @@ def load():
 def showGenre():
     oGui = cGui()
     params = ParameterHandler()
-    oRequestHandler = cRequestHandler(URL_MAIN)
-    sHtmlContent = oRequestHandler.request()
+    oRequest = cRequestHandler(URL_MAIN)
+    sHtmlContent = oRequest.request()
     pattern = '<section id="genre">(.*?)</section>'
     aResult = cParser().parse(sHtmlContent, pattern)
     if not aResult[0] or not aResult[1][0]: return
@@ -57,8 +56,8 @@ def showGenre():
 def showAlphaNumeric():
     oGui = cGui()
     params = ParameterHandler()
-    oRequestHandler = cRequestHandler(URL_MAIN)
-    sHtmlContent = oRequestHandler.request()
+    oRequest = cRequestHandler(URL_MAIN)
+    sHtmlContent = oRequest.request()
     pattern = '<section id="movietitle">(.*?)</section>'
     aResult = cParser().parse(sHtmlContent, pattern)
     if not aResult[0] or not aResult[1][0]: return
@@ -75,9 +74,9 @@ def showEntries(entryUrl = False, sGui = False):
     oGui = sGui if sGui else cGui()
     params = ParameterHandler()
     if not entryUrl: entryUrl = params.getValue('sUrl')
-    oRequestHandler = cRequestHandler(entryUrl)
+    oRequest = cRequestHandler(entryUrl)
     oGui.setView('tvshows' if 'serien/' in entryUrl else 'movie')
-    sHtmlContent = oRequestHandler.request()
+    sHtmlContent = oRequest.request()
     # Grab the link and title
     pattern = '<a[^>]*href="([^"]*)"[^>]*title="([^"]*)"[^>]*>[^<]*'
     # Grab the thumbnail
@@ -102,9 +101,9 @@ def showEntries(entryUrl = False, sGui = False):
 
 # Show the hosters dialog
 def showHosters():
-    params= ParameterHandler()
-    oRequestHandler = cRequestHandler(params.getValue('entryUrl'))
-    sHtmlContent = oRequestHandler.request()
+    params = ParameterHandler()
+    oRequest = cRequestHandler(params.getValue('entryUrl'))
+    sHtmlContent = oRequest.request()
     pattern = '<p[^>]*class="hostName"[^>]*>([^<>]+)</p>.*?'
     pattern += '<a[^>]*class="[^"]*stream-src[^"]*"[^>]*data-id="([^"]+)"[^>]*>'
     aResult = cParser().parse(sHtmlContent, pattern)
