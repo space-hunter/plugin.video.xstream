@@ -11,6 +11,7 @@ import re, urllib, urllib2
 
 SITE_IDENTIFIER = 'szene-streams_com'
 SITE_NAME = 'Szene-Streams'
+SITE_ICON = 'szenestreams.png'
 
 URL_MAIN = 'http://www.szene-streams.com/'
 URL_MOVIES = URL_MAIN + 'publ/'
