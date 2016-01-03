@@ -23,14 +23,15 @@ class cPluginHandler:
         update = False
         fileNames = self.__getFileNamesFromFolder(self.defaultFolder)
         for fileName in fileNames:
-            plugin = {'name':'', 'icon':'', 'settings':'','modified':0}
-            plugin.update(pluginDB[fileName])
+            plugin = { 'name' : '', 'icon' : '', 'settings' : '', 'modified' : 0 }
+            if fileName in pluginDB:
+                plugin.update(pluginDB[fileName])
             try:
-                modTime = os.path.getmtime( os.path.join(self.defaultFolder,fileName+'.py'))
+                modTime = os.path.getmtime(os.path.join(self.defaultFolder,fileName+'.py'))
             except OSError:
                 modTime = 0
             if fileName not in pluginDB or modTime > plugin['modified']:
-                logger.info('load plugin: '+ str(fileName))
+                logger.info('load plugin: ' + str(fileName))
                 # try to import plugin
                 pluginData = self.__getPluginData(fileName)
                 if pluginData:
@@ -47,10 +48,7 @@ class cPluginHandler:
         if update or deletions:
             self.__updateSettings(pluginDB)
             self.__updatePluginDB(pluginDB)
-
         return self.getAvailablePluginsFromDB()
-
-
 
     def getAvailablePluginsFromDB(self):
         plugins = []
