@@ -52,6 +52,13 @@ def showEntries():
         oGuiElement.setThumbnail(sThumbnail if 'http:' in sThumbnail else URL_MAIN + sThumbnail)
         params.setParam('entryUrl', sUrl)
         oGui.addFolder(oGuiElement, params, bIsFolder = False)
+
+    pattern = '<a[^>]*class="[^"]*pageing[^"]*"[^>]*href=["\']([^"\']*)["\'][^>]*>[ ]*vorw'
+    aResult = cParser().parse(sHtmlContent, pattern)
+    if aResult[0]:
+        logger.info(aResult[1][0])
+        params.setParam('sUrl', aResult[1][0])
+        oGui.addNextPage(SITE_IDENTIFIER, 'showEntries', params)
     oGui.setEndOfDirectory()
 
 # Show the hosters dialog
