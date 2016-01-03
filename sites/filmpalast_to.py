@@ -8,6 +8,7 @@ from resources.lib import logger
 from resources.lib.handler.ParameterHandler import ParameterHandler
 from resources.lib.handler.pluginHandler import cPluginHandler
 from resources.lib.util import cUtil
+import json
 import re
 
 SITE_IDENTIFIER = 'filmpalast_to'
@@ -112,7 +113,9 @@ def showHosters():
     hosters = []
     for sHost, sId in aResult[1]:
         hoster = dict()
-        hoster['link'] = __getSource(sId)
+        sUrl = __getSource(sId)
+        if not sUrl: continue
+        hoster['link'] = sUrl
         hoster['name'] = sHost
         hoster['displayedName'] = sHost
         hosters.append(hoster)
@@ -153,5 +156,5 @@ def __getSource(id):
     oRequest.addHeaderEntry('Referer', URL_MAIN)
     oRequest.addHeaderEntry('X-Requested-With', 'XMLHttpRequest')
     oRequest.setRequestType(oRequest.REQUEST_TYPE_POST)
-    data = oRequest.request()
-    return re.compile('"url":"([^"]+)"').findall(data)[0].replace('\\', '')
+    data = json.loads(oRequest.request())
+    return data['url'] if int(data['error']) == 0 else False
