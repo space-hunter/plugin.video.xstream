@@ -193,19 +193,17 @@ def _search(oGui, sSearchText):
     oGui.setEndOfDirectory()
 
 def getSearchResult(sSearchText, url):
-    req = urllib2.Request(url)
-    req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
-    values = { 'query' : sSearchText, 'a' : '2' }
-    response = urllib2.urlopen(req, urllib.urlencode(values))
-    data = response.read()
-    response.close()
-    return data
+    oRequest = cRequestHandler(url)
+    oRequest.addParameters('query', sSearchText)
+    oRequest.addParameters('a', '2')
+    return oRequest.request()
 
 # Taken and modified from pyLoad module/plugins/crypter/LinkCryptWs.py
 def resolveLinkcrypt(sUrl, hosters):
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
-    pattern = '<form action="http://linkcrypt.ws/out.html"[^>]*?>.*?<input[^>]*?value="(.+?)"[^>]*?name="file"'
+    pattern = '<form action="http://linkcrypt.ws/out.html"[^>]*?>.*?'
+    pattern += '<input[^>]*?value="(.+?)"[^>]*?name="file"'
     aResult = cParser().parse(sHtmlContent, pattern)
     if not aResult[0]:
         return
