@@ -158,4 +158,6 @@ def __getSource(id):
     data = json.loads(oRequest.request())
     if 'error' in data and int(data['error']) == 0 and 'url' in data:
         return data['url']
+    if 'msg' in data:
+        logger.info("Get link failed: '%s'" % data['msg'])
     return False
