@@ -7,7 +7,7 @@ from resources.lib import logger
 from resources.lib.handler.ParameterHandler import ParameterHandler
 from resources.lib.handler.pluginHandler import cPluginHandler
 from resources.lib.util import cUtil
-import re, urllib, urllib2
+import re
 
 SITE_IDENTIFIER = 'filmpalast_to'
 SITE_NAME = 'FilmPalast.to'
@@ -40,8 +40,6 @@ def showGenre():
     params = ParameterHandler()
     oRequestHandler = cRequestHandler(URL_MAIN)
     sHtmlContent = oRequestHandler.request()
-    # Get the URL and genre name
-    # <section id="genre">
     pattern = '<section id="genre">(.*?)</section>'
     aResult = cParser().parse(sHtmlContent, pattern)
     if not aResult[0]: return
@@ -59,8 +57,6 @@ def showAlphaNumeric():
     params = ParameterHandler()
     oRequestHandler = cRequestHandler(URL_MAIN)
     sHtmlContent = oRequestHandler.request()
-    # Get the URL and genre name
-    # <section id="genre">
     pattern = '<section id="movietitle">(.*?)</section>'
     aResult = cParser().parse(sHtmlContent, pattern)
     if not aResult[0]: return
@@ -88,7 +84,6 @@ def showEntries(entryUrl = False, sGui = False):
     if not aResult[0]:
         return
     for sUrl, sName, sThumbnail in aResult[1]:
-        logger.info(sThumbnail)
         oGuiElement = cGuiElement(sName, SITE_IDENTIFIER, 'showHosters')
         oGuiElement.setMediaType('movie')
         oGuiElement.setThumbnail(__checkUrl(sThumbnail))
@@ -98,8 +93,7 @@ def showEntries(entryUrl = False, sGui = False):
     pattern = '<a[^>]*class="[^"]*pageing[^"]*"[^>]*'
     pattern += 'href=["\']([^"\']*)["\'][^>]*>[ ]*vorw'
     aResult = cParser().parse(sHtmlContent, pattern)
-    if aResult[0]:
-        logger.info(aResult[1][0])
+    if aResult[0] and aResult[1][0]:
         params.setParam('sUrl', aResult[1][0])
         oGui.addNextPage(SITE_IDENTIFIER, 'showEntries', params)
     oGui.setEndOfDirectory()
@@ -107,7 +101,6 @@ def showEntries(entryUrl = False, sGui = False):
 # Show the hosters dialog
 def showHosters():
     params= ParameterHandler()
-    logger.info(params.getValue('entryUrl'))
     oRequestHandler = cRequestHandler(params.getValue('entryUrl'))
     sHtmlContent = oRequestHandler.request()
     pattern = '<p[^>]*class="hostName"[^>]*>([^<>]+)</p>.*?'
