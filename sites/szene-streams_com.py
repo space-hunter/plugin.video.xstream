@@ -7,7 +7,7 @@ from resources.lib import logger
 from resources.lib.handler.ParameterHandler import ParameterHandler
 from resources.lib.handler.pluginHandler import cPluginHandler
 from resources.lib.util import cUtil
-import re, urllib, urllib2
+import re
 
 SITE_IDENTIFIER = 'szene-streams_com'
 SITE_NAME = 'Szene-Streams'
@@ -200,8 +200,8 @@ def getSearchResult(sSearchText, url):
 
 # Taken and modified from pyLoad module/plugins/crypter/LinkCryptWs.py
 def resolveLinkcrypt(sUrl, hosters):
-    oRequestHandler = cRequestHandler(sUrl)
-    sHtmlContent = oRequestHandler.request()
+    oRequest = cRequestHandler(sUrl)
+    sHtmlContent = oRequest.request()
     pattern = '<form action="http://linkcrypt.ws/out.html"[^>]*?>.*?'
     pattern += '<input[^>]*?value="(.+?)"[^>]*?name="file"'
     aResult = cParser().parse(sHtmlContent, pattern)
@@ -210,10 +210,10 @@ def resolveLinkcrypt(sUrl, hosters):
 
     for idx, weblink_id in enumerate(aResult[1]):
         try:
-            data = urllib.urlencode({ 'file' : weblink_id })
-            req = urllib2.Request("http://linkcrypt.ws/out.html", data)
-            res = urllib2.urlopen(req).read()
-            link = re.compile("top.location.href=doNotTrack\('(.+?)'\)").findall(res)[0]
+            oRequest = cRequestHandler("http://linkcrypt.ws/out.html")
+            oRequest.addParameters('file', weblink_id)
+            data = oRequest.request()
+            link = re.compile("top.location.href=doNotTrack\('(.+?)'\)").findall(data)[0]
             hname = getHosterName(link)
             hname = "Part %d - %s" % (idx + 1, hname)
             logger.info("Resolved LinkCrypt link: %s" % link)
