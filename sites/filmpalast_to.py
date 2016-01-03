@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# Reimplimented from LaryLooses plugin.video.filmpalast_to addon
 from resources.lib.gui.gui import cGui
 from resources.lib.gui.guiElement import cGuiElement
 from resources.lib.handler.requestHandler import cRequestHandler
@@ -42,7 +43,7 @@ def showGenre():
     sHtmlContent = oRequestHandler.request()
     pattern = '<section id="genre">(.*?)</section>'
     aResult = cParser().parse(sHtmlContent, pattern)
-    if not aResult[0]: return
+    if not aResult[0] or not aResult[1][0]: return
     pattern = '<a[^>]*href="([^"]*)">[ ]*([^<]*)</a>'
     aResult = cParser().parse(aResult[1][0], pattern)
     if not aResult[0]: return
@@ -59,7 +60,7 @@ def showAlphaNumeric():
     sHtmlContent = oRequestHandler.request()
     pattern = '<section id="movietitle">(.*?)</section>'
     aResult = cParser().parse(sHtmlContent, pattern)
-    if not aResult[0]: return
+    if not aResult[0] or not aResult[1][0]: return
     pattern = '<a[^>]*href="([^"]*)">[ ]*([^<]*)</a>'
     aResult = cParser().parse(aResult[1][0], pattern)
     if not aResult[0]: return
