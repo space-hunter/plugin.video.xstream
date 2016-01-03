@@ -18,6 +18,7 @@ URL_STREAM = URL_MAIN + 'stream/%d/1'
 URL_MOVIES_NEW = URL_MAIN + 'movies/new'
 URL_MOVIES_TOP = URL_MAIN + 'movies/top'
 URL_SHOWS_NEW = URL_MAIN + 'serien/view'
+URL_SEARCH = URL_MAIN + 'search/title/'
 
 def load():
     logger.info("Load %s" % SITE_NAME)
@@ -31,6 +32,7 @@ def load():
     oGui.addFolder(cGuiElement('Top Filme', SITE_IDENTIFIER, 'showEntries'), params)
     oGui.addFolder(cGuiElement('Genre', SITE_IDENTIFIER, 'showGenre'))
     oGui.addFolder(cGuiElement('A-Z', SITE_IDENTIFIER, 'showAlphaNumeric'))
+    oGui.addFolder(cGuiElement('Suche', SITE_IDENTIFIER, 'showSearch'))
     oGui.setEndOfDirectory()
 
 def showGenre():
@@ -71,10 +73,10 @@ def showAlphaNumeric():
         oGui.addFolder(oGuiElement, params)
     oGui.setEndOfDirectory()
 
-def showEntries():
-    oGui = cGui()
+def showEntries(entryUrl = False, sGui = False):
+    oGui = sGui if sGui else cGui()
     params = ParameterHandler()
-    entryUrl = params.getValue('sUrl')
+    if not entryUrl: entryUrl = params.getValue('sUrl')
     oRequestHandler = cRequestHandler(entryUrl)
     oGui.setView('tvshows' if 'serien/' in entryUrl else 'movie')
     sHtmlContent = oRequestHandler.request()
@@ -134,6 +136,19 @@ def getHosterUrl(sUrl = False):
     result['resolved'] = False
     results.append(result)
     return results
+
+# Show the search dialog, return/abort on empty input
+def showSearch():
+    oGui = cGui()
+    sSearchText = oGui.showKeyBoard()
+    if not sSearchText: return
+    _search(oGui, sSearchText)
+
+# Search using the requested string sSearchText
+def _search(oGui, sSearchText):
+    if not sSearchText: return
+    showEntries(URL_SEARCH + sSearchText, oGui)
+    oGui.setEndOfDirectory()
 
 def __checkUrl(url):
     return url if 'http:' in url else URL_MAIN + url
