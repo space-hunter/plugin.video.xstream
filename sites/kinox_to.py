@@ -163,7 +163,7 @@ def __getHtmlContent(sUrl = None, sSecurityValue = None):
     sPrefLang = __getPreferredLanguage()
     # Make the request
     oRequest = cRequestHandler(sUrl)
-    oRequest.addHeaderEntry('Cookie', sPrefLang+sSecurityValue+'ListDisplayYears=Always;')
+    oRequest.addHeaderEntry('Cookie', sPrefLang + str(sSecurityValue) + 'ListDisplayYears=Always;')
     oRequest.addHeaderEntry('Referer', URL_MAIN)
     oRequest.addHeaderEntry('Accept', '*/*')
     oRequest.addHeaderEntry('Host', domain)
