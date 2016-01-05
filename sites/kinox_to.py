@@ -765,7 +765,7 @@ def __getAjaxContent(sMediaType, iPage, iMediaTypePageId, metaOn , sCharacter=''
         oRequest.addParameters('Page', str(iPage))
         oRequest.addParameters('Per_Page', '30')
         oRequest.addParameters('dir', 'desc')
-    oRequest.addHeaderEntry('Cookie', sPrefLang+sSecurityValue+'ListDisplayYears=Always;')
+    oRequest.addHeaderEntry('Cookie', sPrefLang+str(sSecurityValue)+'ListDisplayYears=Always;')
     oRequest.addHeaderEntry('Referer', URL_MAIN)
     oRequest.addHeaderEntry('Accept', '*/*')
     oRequest.addHeaderEntry('Host', domain)
