@@ -14,7 +14,7 @@ from resources.lib.bs_finalizer import *
 # "Global" variables
 SITE_IDENTIFIER = 'burning_series_org'
 SITE_NAME = 'Burning-Series'
-SITE_ICON = 'burning_series.jpg'
+SITE_ICON = 'burning_series.png'
 
 URL_MAIN = 'http://www.bs.to/api/'
 URL_COVER = 'http://s.bs.to/img/cover/%s.jpg|encoding=gzip'
