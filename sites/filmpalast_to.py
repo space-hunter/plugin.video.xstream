@@ -110,11 +110,10 @@ def showHosters():
     if not aResult[0]:
         return
     hosters = []
-    for sHost, sId in aResult[1]:
+    for sHost, iId in aResult[1]:
         hoster = dict()
-        sUrl = __getSource(sId)
-        if not sUrl: continue
-        hoster['link'] = sUrl
+        if not iId: continue
+        hoster['link'] = iId
         hoster['name'] = sHost
         hoster['displayedName'] = sHost
         hosters.append(hoster)
@@ -128,7 +127,7 @@ def getHosterUrl(sUrl = False):
         sUrl = oParams.getValue('url')
     results = []
     result = {}
-    result['streamUrl'] = sUrl
+    result['streamUrl'] = __getSource(sUrl)
     result['resolved'] = False
     results.append(result)
     return results
