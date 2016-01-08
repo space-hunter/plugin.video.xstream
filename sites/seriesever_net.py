@@ -6,8 +6,14 @@ from resources.lib.handler.requestHandler import cRequestHandler
 from resources.lib.parser import cParser
 from resources.lib import logger
 from resources.lib.handler.ParameterHandler import ParameterHandler
+from xbmc import translatePath
+
+import os
 import re
 import json
+import urllib
+import base64
+import xbmcaddon
 
 SITE_IDENTIFIER = 'seriesever_net'
 SITE_NAME = 'SeriesEver'
@@ -15,13 +21,14 @@ SITE_ICON = 'seriesever.png'
 
 URL_MAIN = 'http://seriesever.net/'
 URL_SERIES = URL_MAIN + 'andere-serien/'
-URL_ANIMES = URL_MAIN + 'anime-serien/'
+URL_ANIMES = URL_MAIN + 'anime/'
 URL_MOVIES = URL_MAIN + 'filme/'
 
 URL_GENRE = URL_MAIN + 'genre/'
 
 URL_SEARCH = URL_MAIN + 'service/search'
 URL_GETVIDEOPART = URL_MAIN + 'service/get_video_part'
+URL_PLAYER = URL_MAIN + 'play/plugins/playerphp.php'
 
 
 def load():
@@ -49,6 +56,7 @@ def __getHtmlContent(sUrl=None):
             sUrl = oParams.getValue('sUrl')
     # Make the request
     oRequest = cRequestHandler(sUrl)
+    oRequest.addHeaderEntry('User-Agent', 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/13.0.782.99 Safari/535.1')
     oRequest.addHeaderEntry('Referer', URL_MAIN)
     oRequest.addHeaderEntry('Accept', '*/*')
 
@@ -273,7 +281,7 @@ def showEpisodes():
     sTitle = oParams.getValue('Title')
     sSeason = oParams.getValue('Season')
 
-    sPattern = 'class="list-group-item".*?<span itemprop="name">Staffel ' + sSeason + ' Episode (.*?)</span>.*?<a class="episode-name" href="(.*?)" title="(.*?)"'
+    sPattern = 'class="list-group-item".*?<span itemprop="name">Staffel ' + sSeason + ' Episode(?:[\s]*)(.*?)</span>.*?<a class="episode-name" href="(.*?)" title="(.*?)"'
 
     # request
     sHtmlContent = __getHtmlContent()
@@ -364,31 +372,54 @@ def showHosters():
 
 
 def parseHosterResponse(json_data, hosters):
-    if json_data['part']['source'] == 'other':
-        code = None
+    if (json_data['part']['source'] != 'url') and (json_data['part']['source'] != 'other'):
+        logger.error("Unknown data: %s" % json_data['part']['source'])
+        return
+
+    code = None
+    try:
+        code = json_data['part']['code']
+    except:
+        pass
+
+    if code:
+        hoster = dict()
+
+        if json_data['part']['source'] == 'url':
+            if "http" not in code:
+                hoster['link'] = __decodeHash(code)
+            else:
+                hoster['link'] = code
+        elif json_data['part']['source'] == 'other':
+            link1 = re.findall('src="(http.*?)"', code)[0]
+
+            if "/play/old/seframer.php" in link1:
+                hoster['link'] = urllib.unquote(__getOldurl(link1))
+            else:
+                hoster['link'] = link1
+
+        hname = 'Unknown Hoster'
         try:
-            code = json_data['part']['code']
-        except:
-            pass
+            hname = re.compile('^(?:https?:\/\/)?(?:[^@\n]+@)?([^:\/\n]+)', flags=re.I | re.M).findall(hoster['link'])
+        except Exception, e:
+            logger.error(e)
 
-        if code:
-            hoster = dict()
+        hoster['name'] = hname[0]
+        hoster['displayedName'] = hname[0]
 
-            hoster['link'] = re.findall('src="(http.*?)"', code)[0]
-
-            hname = 'Unknown Hoster'
-            try:
-                hname = re.compile('^(?:https?:\/\/)?(?:[^@\n]+@)?([^:\/\n]+)', flags=re.I | re.M).findall(
-                    hoster['link'])
-            except Exception, e:
-                logger.error(e)
-
-            hoster['name'] = hname[0]
-            hoster['displayedName'] = hname[0]
-
-            hosters.append(hoster)
+        hosters.append(hoster)
 
     return hosters
+
+
+def __decodeHash(hash):
+    hash = hash.replace("!BeF", "R")
+    hash = hash.replace("@jkp", "Ax")
+    try:
+        url = base64.b64decode(hash)
+        return url
+    except:
+        logger.error("Invalid Base64: %s" % hash)
 
 
 def getHosterUrl(sUrl=False):
@@ -423,3 +454,22 @@ def __get_domain_list(app, domain_list):
     for domain in domains:
         domain_list.append(domain)
     return domain_list
+
+
+def __getOldurl(link):
+    sHtmlContent = __getHtmlContent(link)
+    url = re.findall('url="(.*?)"', sHtmlContent)
+
+    if len(url) == 0:
+        url = re.findall('src="(.*?)"', sHtmlContent)
+        if len(url) == 0:
+            logger.error("Unknown Response: %s" % sHtmlContent)
+        else:
+            if "play/se.php" in url[0]:
+                sHtmlContent = __getHtmlContent(url[0])
+                hash = re.findall('link:"(.*?)"', sHtmlContent)[0]
+                return __decodeHash(hash)
+            else:
+                logger.error("Unknown url: %s" % url)
+    else:
+        return url[0]

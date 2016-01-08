@@ -64,7 +64,10 @@ class cHosterGui:
             msg = False
         if sLink != False and not msg:
             logger.info('file link: ' + str(sLink))
-            listItem = xbmcgui.ListItem(path=sLink + self.userAgent)
+            if "User-Agent=" not in sLink:
+                listItem = xbmcgui.ListItem(path=sLink + self.userAgent)
+            else:
+                listItem = xbmcgui.ListItem(path=sLink)
             info = {}
             info['Title'] = sFileName
             if sThumbnail:
@@ -500,4 +503,3 @@ class Hoster:
     def __init__(self, name, link):
         self.name = name
         self.link = link
-            

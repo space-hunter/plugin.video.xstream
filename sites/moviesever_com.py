@@ -7,7 +7,7 @@ from resources.lib import logger
 from resources.lib.handler.ParameterHandler import ParameterHandler
 from resources.lib.handler.pluginHandler import cPluginHandler
 from resources.lib.util import cUtil
-import re
+import re, base64
 
 SITE_IDENTIFIER = 'moviesever_com'
 SITE_NAME = 'MoviesEver'
@@ -183,6 +183,27 @@ def __decode(text):
     text = text.replace('&#8217;', '\'')
     return text
 
+def __checkSEUrl(sUrl):
+    if "play/old/framer.php" in sUrl:
+        sHtmlContent = __getHtmlContent(sUrl)
+        url = re.findall('src="(.*?)"', sHtmlContent)[0]
+        return __checkSEUrl(url)
+    elif "play/moviesever.php" in sUrl:
+        sHtmlContent = __getHtmlContent(sUrl)
+        hash = re.findall('link:"(.*?)"', sHtmlContent)[0]
+        return __decodeHash(hash)
+    return None
+
+
+def __decodeHash(hash):
+    hash = hash.replace("!BeF", "R")
+    hash = hash.replace("@jkp", "Ax")
+    try:
+        url = base64.b64decode(hash)
+        return url
+    except:
+        logger.error("Invalid Base64: %s" % hash)
+
 
 def __getSELink(sUrl):
     sPattern = '<a href="(http://seriesever.com/serien/.*?)" target="MoviesEver">'
@@ -236,7 +257,7 @@ def getHoster(sHtmlContent, hosters):
     if aResult[0]:
         hoster = dict()
 
-        hoster['link'] = aResult[1][0]
+        hoster['link'] = __checkSEUrl(aResult[1][0])
 
         hname = 'Unknown Hoster'
         try:
