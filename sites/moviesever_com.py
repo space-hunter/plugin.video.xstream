@@ -259,6 +259,9 @@ def getHoster(sHtmlContent, hosters):
 
         hoster['link'] = __checkSEUrl(aResult[1][0])
 
+        if hoster['link'] is None:
+            return hosters
+
         hname = 'Unknown Hoster'
         try:
             hname = re.compile('^(?:https?:\/\/)?(?:[^@\n]+@)?([^:\/\n]+)', flags=re.I | re.M).findall(hoster['link'])[0]
