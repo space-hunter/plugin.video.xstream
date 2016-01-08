@@ -7,7 +7,7 @@ from resources.lib import logger
 from resources.lib.handler.ParameterHandler import ParameterHandler
 from resources.lib.handler.pluginHandler import cPluginHandler
 from resources.lib.util import cUtil
-import re, base64
+import re, base64, urllib
 
 SITE_IDENTIFIER = 'moviesever_com'
 SITE_NAME = 'MoviesEver'
@@ -267,6 +267,7 @@ def getHoster(sHtmlContent, hosters):
 
         hoster['name'] = hname
         hoster['displayedName'] = hname
+        hoster['link'] = urllib.quote(hoster['link'])
 
         hosters.append(hoster)
 
