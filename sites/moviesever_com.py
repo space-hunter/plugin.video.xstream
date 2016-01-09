@@ -270,7 +270,7 @@ def getHoster(sHtmlContent, hosters):
 
         hoster['name'] = hname
         hoster['displayedName'] = hname
-        hoster['link'] = urllib.quote(hoster['link'])
+        hoster['link'] = hoster['link']
 
         hosters.append(hoster)
 

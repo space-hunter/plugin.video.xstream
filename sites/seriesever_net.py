@@ -406,7 +406,7 @@ def parseHosterResponse(json_data, hosters):
 
         hoster['name'] = hname[0]
         hoster['displayedName'] = hname[0]
-        hoster['link'] = urllib.quote(hoster['link'])
+        hoster['link'] = hoster['link']
 
         hosters.append(hoster)
 
