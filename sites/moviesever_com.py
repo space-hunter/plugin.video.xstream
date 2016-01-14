@@ -186,23 +186,23 @@ def __decode(text):
 def __checkSEUrl(sUrl):
     if "play/old/framer.php" in sUrl:
         sHtmlContent = __getHtmlContent(sUrl)
-        url = re.findall('src="(.*?)"', sHtmlContent)[0]
-        return __checkSEUrl(url)
+        sUrl = re.findall('src="(.*?)"', sHtmlContent)[0]
+        return __checkSEUrl(sUrl)
     elif "play/moviesever.php" in sUrl:
         sHtmlContent = __getHtmlContent(sUrl)
-        hash = re.findall('link:"(.*?)"', sHtmlContent)[0]
-        return __decodeHash(hash)
+        sHash = re.findall('link:"(.*?)"', sHtmlContent)[0]
+        return __decodeHash(sHash)
     return None
 
 
-def __decodeHash(hash):
-    hash = hash.replace("!BeF", "R")
-    hash = hash.replace("@jkp", "Ax")
+def __decodeHash(sHash):
+    sHash = sHash.replace("!BeF", "R")
+    sHash = sHash.replace("@jkp", "Ax")
     try:
-        url = base64.b64decode(hash)
-        return url
+        sUrl = base64.b64decode(sHash)
+        return sUrl
     except:
-        logger.error("Invalid Base64: %s" % hash)
+        logger.error("Invalid Base64: %s" % sHash)
 
 
 def __getSELink(sUrl):
@@ -269,7 +269,6 @@ def getHoster(sHtmlContent, hosters):
             pass
 
         hoster['name'] = hname
-        hoster['displayedName'] = hname
         hoster['link'] = hoster['link']
 
         hosters.append(hoster)
