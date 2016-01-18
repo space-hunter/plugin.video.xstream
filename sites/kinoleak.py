@@ -5,7 +5,7 @@ from resources.lib.handler.requestHandler import cRequestHandler
 from resources.lib.parser import cParser
 from resources.lib import logger
 from resources.lib.handler.ParameterHandler import ParameterHandler
-
+from resources.lib import blazingfast
 
 SITE_IDENTIFIER = 'kinoleak'
 SITE_NAME = 'KinoLeak.Tv'
@@ -41,6 +41,7 @@ def load():
   oGui.addFolder(cGuiElement('Abenteuer', SITE_IDENTIFIER, 'showGenreAbenteuer'))
   oGui.addFolder(cGuiElement('Animation', SITE_IDENTIFIER, 'showGenreAnimation'))
   oGui.setEndOfDirectory()
+  __unprotect()
 
 def showNewMovies():
     _parseMovieList(URL_NEW)
@@ -186,3 +187,27 @@ def getHosterUrl(sStreamUrl = False):
    result['resolved'] = False
    results.append(result)
    return results
+
+def __unprotect():
+        parser = cParser()
+        request = cRequestHandler(URL_MAIN)
+        content = request.request()
+        if 'Blazingfast.io' not in content:
+            return content
+        pattern = 'xhr\.open\("GET","([^,]+),'
+        match = parser.parse(content,pattern)
+        if not match[0]: 
+            return False
+        logger.info(match[1])
+        urlParts = match[1][0].split('"')
+        sid = '1200'
+        url = '%s%s%s%s' % (URL_MAIN[:-1], urlParts[0],sid,urlParts[2])
+        logger.info(url)
+        request = cRequestHandler(url)
+        content = request.request()
+        if not blazingfast.check(content):
+            return content #even if its false its probably not the right content, we'll see
+        cookie = blazingfast.getCookie(content)
+        if not cookie: 
+            return False
+        request.setCookie(cookie)
