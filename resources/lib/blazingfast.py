@@ -2,7 +2,7 @@
 import urllib2, re
 from binascii import unhexlify
 from binascii import hexlify
-from Crypto.Cipher import AES
+from crypto.cipher.aes_cbc import AES_CBC
 from resources.lib import logger
 
 COOKIE_NAME = 'BLAZINGFAST-WEB-PROTECT'
@@ -14,12 +14,11 @@ def check(content):
     return COOKIE_NAME in content
 
 #not very robust but lazieness...
-def getCookie(content):
+def getCookieString(content):
     vars = re.findall('toNumbers\("([^"]+)"',content)
     if not vars:
         logger.info('vars not found')
         return False
-    print vars
     value = _decrypt(vars[2], vars[0], vars[1])
     if not value:
         logger.info('value decryption failed')
@@ -28,17 +27,20 @@ def getCookie(content):
     cookieMeta = re.findall(pattern,content)
     if not cookieMeta:
         logger.info('cookie meta not found')
-    cookie = "%s=%s;%s" % (COOKIE_NAME, value, cookieMeta)
+    cookie = "%s=%s;%s" % (COOKIE_NAME, value, cookieMeta[0])
     return cookie
     # + toHex(BFCrypt.decrypt(c, 2, a, b)) +
 
-def _decrypt(t, o, n):
-    t = unhexlify(t)
-    o = unhexlify(o)
-    n = unhexlify(n)
-    if len(n) != 16:
-        print"iv length is" + str(len(n)) +" must be 16."
+def _decrypt(msg, key, iv):
+    msg = unhexlify(msg)
+    key = unhexlify(key)
+    iv = unhexlify(iv)
+    if len(iv) != 16:
+        logger.info("iv length is" + str(len(iv)) +" must be 16.")
         return False
-    aes = AES.new(o, AES.MODE_CBC, n)
-    f = hexlify(aes.decrypt(t[0:16]))
+    aes = AES_CBC(key)
+    result = aes.decrypt(msg, iv=iv)
+    f = hexlify(result)
+    #aes = AES.new(o, AES.MODE_CBC, n)
+    #f = hexlify(aes.decrypt(t[0:16]))
     return f 

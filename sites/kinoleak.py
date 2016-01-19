@@ -6,6 +6,7 @@ from resources.lib.parser import cParser
 from resources.lib import logger
 from resources.lib.handler.ParameterHandler import ParameterHandler
 from resources.lib import blazingfast
+import sys
 
 SITE_IDENTIFIER = 'kinoleak'
 SITE_NAME = 'KinoLeak.Tv'
@@ -41,7 +42,6 @@ def load():
   oGui.addFolder(cGuiElement('Abenteuer', SITE_IDENTIFIER, 'showGenreAbenteuer'))
   oGui.addFolder(cGuiElement('Animation', SITE_IDENTIFIER, 'showGenreAnimation'))
   oGui.setEndOfDirectory()
-  __unprotect()
 
 def showNewMovies():
     _parseMovieList(URL_NEW)
@@ -85,13 +85,18 @@ def showSearch():
     else:
         return
     oGui.setEndOfDirectory()
- 
+
+def __getContent(request):
+        content = __unprotect(request)
+        print content
+        return content
+     
        
 def _search(oGui, sSearchString):
     searchUrl = URL_MAIN + 'livesearch.php?q='
     
-    oRequest = cRequestHandler(searchUrl + sSearchString)
-    content = oRequest.request()
+    request = cRequestHandler(searchUrl + sSearchString)
+    content = __getContent(request)
     searchPattern = "<table.*?<a href='([^']+)'.*?<img src='([^']+)'.*?>([^<>']+)</a>"
     oParser = cParser()
     aResult = oParser.parse(content, searchPattern)
@@ -122,8 +127,8 @@ def _search(oGui, sSearchString):
 def _parseMovieList(url): 
     oGui = cGui()  
     params = ParameterHandler()    
-    oRequestHandler = cRequestHandler(url)
-    sHtmlContent = oRequestHandler.request()
+    request = cRequestHandler(url)
+    sHtmlContent = __getContent(request)
     # parse movie entries
     pattern = 'class="tabel-topasd".*?<a href="([^"]+)"><img src="([^"]+)" title="([^"]+)".*?<span.*?>([^<>]+)</span>.*?title="([^"]+)"/>'
     oParser = cParser()
@@ -159,8 +164,8 @@ def getHosters():
     oParams = ParameterHandler() #Parameter laden
     sUrl = oParams.getValue('siteUrl')  # Weitergegebenen Urlteil aus den Parametern holen
 
-    oRequestHandler = cRequestHandler(URL_MAIN+sUrl) # gesamte Url zusammesetzen
-    sHtmlContent = oRequestHandler.request()         # Seite abrufen
+    request = cRequestHandler(URL_MAIN+sUrl) # gesamte Url zusammesetzen
+    sHtmlContent = __getContent(request)         # Seite abrufen
     
     sPattern = 'iframe src="(http[^"]+)"'
     oParser = cParser()
@@ -188,26 +193,31 @@ def getHosterUrl(sStreamUrl = False):
    results.append(result)
    return results
 
-def __unprotect():
+def __unprotect(initialRequest):
+        
         parser = cParser()
-        request = cRequestHandler(URL_MAIN)
-        content = request.request()
+        content = initialRequest.request()
         if 'Blazingfast.io' not in content:
             return content
         pattern = 'xhr\.open\("GET","([^,]+),'
         match = parser.parse(content,pattern)
-        if not match[0]: 
+        if not match[0]:
             return False
-        logger.info(match[1])
         urlParts = match[1][0].split('"')
         sid = '1200'
         url = '%s%s%s%s' % (URL_MAIN[:-1], urlParts[0],sid,urlParts[2])
-        logger.info(url)
-        request = cRequestHandler(url)
+        request = cRequestHandler(url,caching = False)
+        request.addHeaderEntry('Referer',initialRequest.getRequestUri())
         content = request.request()
         if not blazingfast.check(content):
             return content #even if its false its probably not the right content, we'll see
-        cookie = blazingfast.getCookie(content)
+        cookie = blazingfast.getCookieString(content)
         if not cookie: 
             return False
-        request.setCookie(cookie)
+        initialRequest.caching = False
+        name, value = cookie.split(';')[0].split('=')
+        cookieData = dict((k.strip(), v.strip()) for k,v in (item.split("=") for item in cookie.split(";")))     
+        cookie = initialRequest.createCookie(name,value,domain=cookieData['domain'], expires=sys.maxint, discard=False)
+        initialRequest.setCookie(cookie)
+        content = initialRequest.request()
+        return content
