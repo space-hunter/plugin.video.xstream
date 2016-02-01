@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 from os import path
-from  resources.lib.common import addon
+from resources.lib.common import addon
 from resources.lib.config import cConfig
 import logger
 

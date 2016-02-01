@@ -165,7 +165,7 @@ class cRequestHandler:
 
     def __setCookiePath(self):
         profilePath = common.profilePath
-        cookieFile = os.path.join(xbmc.translatePath(profilePath),'cookies.txt')
+        cookieFile = os.path.join(profilePath,'cookies.txt')
         if not os.path.exists(cookieFile):
             file = open(cookieFile, 'w')
             file.close()
@@ -205,7 +205,7 @@ class cRequestHandler:
     def setCachePath(self, cache=''):
         if not cache:
             profilePath = common.profilePath
-            cache = os.path.join(xbmc.translatePath(profilePath),'htmlcache')
+            cache = os.path.join(profilePath,'htmlcache')
         if not os.path.exists(cache):
             os.makedirs(cache)
         self.__cachePath = cache

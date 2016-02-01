@@ -45,15 +45,26 @@ class cGui:
            self.metaMode = 'replace'
         else:
            self.metaMode = 'add'
+        #check if we were using globalSearch
+        inParams = ParameterHandler()
+        self.globalSearch = inParams.getValue("function") == "globalSearch"
+        self.alterSearch = inParams.getValue("function") == "searchAlter"
+        self.searchResults = []
 
 
     def addFolder(self, oGuiElement, oOutputParameterHandler='', bIsFolder = True, iTotal = 0, isHoster = False):
         '''
         add GuiElement to Gui, adds listitem to a list
         '''
+        # abort xbmc list creation if user requests abort
         if xbmc.abortRequested:
             self.setEndOfDirectory(False)
-            raise Exception('UserAborted')
+            raise RuntimeError('UserAborted')
+        # store result in list if we searched for other sources
+        #if  self.altersearch:
+        #    self.searchresults.append(oguielement)
+        #    return
+
         if not oGuiElement._isMetaSet and self.isMetaOn and oGuiElement._mediaType:
             imdbID = oOutputParameterHandler.getValue('imdbID')
             if imdbID:
@@ -88,13 +99,19 @@ class cGui:
         '''
         itemValues= oGuiElement.getItemValues()
         itemTitle = oGuiElement.getTitle()
+        infoString = ''
         if oGuiElement._sLanguage != '':
-            itemTitle += ' (%s)' % oGuiElement._sLanguage
+            infoString += ' (%s)' % oGuiElement._sLanguage
         if oGuiElement._sSubLanguage != '':
-            itemTitle += ' *Sub: %s*' % oGuiElement._sSubLanguage
+            infoString += ' *Sub: %s*' % oGuiElement._sSubLanguage
         if oGuiElement._sQuality != '':
-            itemTitle += ' [%s]' % oGuiElement._sQuality
-        itemValues['title'] = itemTitle
+            infoString += ' [%s]' % oGuiElement._sQuality
+        if self.globalSearch:
+            infoString += ' %s' % oGuiElement.getSiteName() 
+        if infoString:
+            infoString = '[I]%s[/I]' % infoString
+        itemValues['title'] = itemTitle + infoString
+         
         oListItem = xbmcgui.ListItem(itemTitle, oGuiElement.getTitleSecond(), oGuiElement.getIcon(), oGuiElement.getThumbnail())
         oListItem.setInfo(oGuiElement.getType(), itemValues)     
         oListItem.setProperty('fanart_image', oGuiElement.getFanart())
@@ -114,14 +131,24 @@ class cGui:
             sTest = "%s?site=%s&function=%s&%s" % (self.pluginPath, oContextItem.getFile(), oContextItem.getFunction(), sParams)                
             aContextMenus+= [ ( oContextItem.getTitle(), "XBMC.RunPlugin(%s)" % (sTest,),)]
 
+        itemValues = oGuiElement.getItemValues()
+
         oContextItem = cContextElement()
         oContextItem.setTitle("Info")
         aContextMenus+= [ ( oContextItem.getTitle(), "XBMC.Action(Info)",)]
-        itemValues = oGuiElement.getItemValues()
+
+        #search for alternative source
+        oContextItem.setTitle("Weitere Quellen")
+        searchParams = {}
+        searchParams['searchTitle'] = oGuiElement.getTitle()
+        if 'imdb_id' in itemValues:
+            searchParams['searchImdbID'] = itemValues['imdb_id']
+        aContextMenus+= [ ( oContextItem.getTitle(), "XBMC.Container.Update(%s?function=searchAlter&%s)" % (self.pluginPath, urllib.urlencode(searchParams),),)]
+     
         if 'imdb_id' in itemValues and 'title' in itemValues:
             metaParams = {} 
             if itemValues['title']:
-                metaParams['title'] = itemValues['title']
+                metaParams['title'] = oGuiElement.getTitle()
             if 'mediaType' in itemValues and itemValues['mediaType']:
                 metaParams['mediaType'] = itemValues['mediaType']
             elif 'TVShowTitle' in itemValues and itemValues['TVShowTitle']:
@@ -135,6 +162,7 @@ class cGui:
                 and 'season' in itemValues and itemValues['season'] and int(itemValues['season']) ):
                 metaParams['episode'] = itemValues['episode']
                 metaParams['mediaType'] = 'episode'
+            # if an imdb id is available we can mark this element as seen/unseen in the metahandler
             if itemValues['imdb_id']:
                 metaParams['imdbID'] = itemValues['imdb_id']
                 if itemValues['overlay'] == '7':
@@ -142,11 +170,12 @@ class cGui:
                 else:
                     oContextItem.setTitle("Als gesehen markieren")
                 aContextMenus+= [ ( oContextItem.getTitle(), "XBMC.RunPlugin(%s?function=changeWatched&%s)" % (self.pluginPath, urllib.urlencode(metaParams),),)]
+            # if year is set we can search reliably for metainfos via metahandler
             if 'year' in itemValues and itemValues['year']:
                 metaParams['year'] = itemValues['year']
             oContextItem.setTitle("Suche Metainfos")
             aContextMenus+= [ ( oContextItem.getTitle(), "XBMC.RunPlugin(%s?function=updateMeta&%s)" % (self.pluginPath, urllib.urlencode(metaParams),),)]
-
+        # context options for movies or episodes
         if not bIsFolder:
             oContextItem.setTitle("add to Playlist")     
             aContextMenus+= [ ( oContextItem.getTitle(), "XBMC.RunPlugin(%s&playMode=enqueue)" % (sItemUrl,),)]
@@ -158,6 +187,9 @@ class cGui:
             if cConfig().getSetting('pyload_enabled') == 'true':
                 oContextItem.setTitle("send to PyLoad")     
                 aContextMenus+= [ ( oContextItem.getTitle(), "XBMC.RunPlugin(%s&playMode=pyload)" % (sItemUrl,),)]
+            if cConfig().getSetting('autoPlay')=='true':
+                oContextItem.setTitle("select hoster")     
+                aContextMenus+= [ ( oContextItem.getTitle(), "XBMC.RunPlugin(%s&playMode=play&manual=1)" % (sItemUrl,),)]
         oListItem.addContextMenuItems(aContextMenus)
         #oListItem.addContextMenuItems(aContextMenus, True)  
         return oListItem
@@ -183,6 +215,7 @@ class cGui:
     def setView(self, content='movies'):
         '''
         set the listing to a certain content, makes special views available
+        sets view to the viewID which is selected in xStream settings
         '''
         if content == 'movies':
             xbmcplugin.setContent(self.pluginHandle, 'movies')

@@ -1,77 +1,72 @@
 import sys
 import os
 import json
-from xbmc import translatePath
 from resources.lib.config import cConfig
 from resources.lib import common, logger
 
 class cPluginHandler:
 
     def __init__(self):
-        #TODO pfade in eine common datei verpacken
         self.addon = common.addon
         self.rootFolder = common.addonPath
         self.settingsFile = os.path.join(self.rootFolder, 'resources', 'settings.xml')
         self.profilePath = common.profilePath
-        self.pluginDBFile = translatePath(os.path.join(self.profilePath,'pluginDB'))
+        self.pluginDBFile = os.path.join(self.profilePath,'pluginDB')
         logger.info('profile folder: %s' % self.profilePath)
         logger.info('root folder: %s' % self.rootFolder)
-        self.defaultFolder =  translatePath(os.path.join(self.rootFolder, 'sites'))
+        self.defaultFolder =  os.path.join(self.rootFolder, 'sites')
         logger.info('default sites folder: %s' % self.defaultFolder)
 
     def getAvailablePlugins(self):
-        oConfig = cConfig()
         pluginDB = self.__getPluginDB()
-        newPlugins = {}
         # default plugins
-        sIconFolder = os.path.join(self.rootFolder, 'resources','art','sites')
-        # default plugins
-        aFileNames = self.__getFileNamesFromFolder(self.defaultFolder)
-        for sFileName in aFileNames:
-            if sFileName not in pluginDB:
-                logger.info('load plugin: '+ str(sFileName))
+        update = False
+        fileNames = self.__getFileNamesFromFolder(self.defaultFolder)
+        for fileName in fileNames:
+            plugin = {'name':'', 'icon':'', 'settings':'', 'modified':0}
+            if fileName in pluginDB:
+                plugin.update(pluginDB[fileName])
+            try:
+                modTime = os.path.getmtime(os.path.join(self.defaultFolder,fileName+'.py'))
+            except OSError:
+                modTime = 0
+            if fileName not in pluginDB or modTime > plugin['modified']:
+                logger.info('load plugin: ' + str(fileName))
                 # try to import plugin
-                aPlugin = self.__importPlugin(sFileName)
-                if aPlugin:
-                    pluginDB[sFileName] = aPlugin
+                pluginData = self.__getPluginData(fileName)
+                if pluginData:
+                    pluginData['modified'] = modTime
+                    pluginDB[fileName] = pluginData
+                    update = True
         # check pluginDB for obsolete entries
         deletions = []
         for pluginID in pluginDB:
-            if pluginID not in aFileNames:
+            if pluginID not in fileNames:
                 deletions.append(pluginID)
         for id in deletions:
             del pluginDB[id]
-        self.__updatePluginDB(pluginDB)
-        if deletions:
-            self.__updatePluginSettings(deletions,True)
+        if update or deletions:
+            self.__updateSettings(pluginDB)
+            self.__updatePluginDB(pluginDB)
+        return self.getAvailablePluginsFromDB()
 
-        aPlugins = []
+    def getAvailablePluginsFromDB(self):
+        plugins = []
+        oConfig = cConfig()
+        iconFolder = os.path.join(self.rootFolder, 'resources','art','sites')
+        pluginDB = self.__getPluginDB()
         for pluginID in pluginDB:
             plugin = pluginDB[pluginID]
-            sSiteName = plugin['name']
-            sPluginSettingsName = 'plugin_%s' % pluginID
-            if plugin['icon']:
-                sSiteIcon = os.path.join(sIconFolder, plugin['icon'])
+            pluginSettingsName = 'plugin_%s' % pluginID
+            plugin['id'] = pluginID
+            if 'icon' in plugin:
+                plugin['icon'] = os.path.join(iconFolder, plugin['icon'])
             else:
-                sSiteIcon = ''
+                plugin['icon'] = ''
             # existieren zu diesem plugin die an/aus settings
-            bPlugin = oConfig.getSetting(sPluginSettingsName)
-            if (bPlugin != ''):
-                # settings gefunden
-                if (bPlugin == 'true'):
-                    aPlugins.append(self.__createAvailablePluginsItem(sSiteName, pluginID, sSiteIcon))
-            else:
-                # settings nicht gefunden, also schalten wir es trotzdem sichtbar
-                aPlugins.append(self.__createAvailablePluginsItem(sSiteName, pluginID, sSiteIcon))
-       
-        return aPlugins
-
-    def __createAvailablePluginsItem(self, sPluginName, sPluginIdentifier, sPluginIcon):
-        aPluginEntry = {}
-        aPluginEntry['name'] = sPluginName
-        aPluginEntry['id']   = sPluginIdentifier
-        aPluginEntry['icon'] = sPluginIcon
-        return aPluginEntry
+            if oConfig.getSetting(pluginSettingsName) == 'true':
+                    plugins.append(plugin)
+        return plugins
 
     def __updatePluginDB(self, data):
         file = open(self.pluginDBFile, 'w')
@@ -90,10 +85,11 @@ class cPluginHandler:
         file.close()
         return data
 
-    def __addPluginsToSettings(self, data):
+    def __updateSettings(self, pluginData):
         '''
         data (dict): containing plugininformations
         '''
+        xmlString = '<plugin_settings>%s</plugin_settings>'
         import xml.etree.ElementTree as ET
         tree = ET.parse(self.settingsFile)
         #find Element for plugin Settings
@@ -103,38 +99,36 @@ class cPluginHandler:
                 pluginElem = elem
                 break
         if not pluginElem:
-            logger.info('pluginElement not found')
+            logger.info('could not update settings, pluginElement not found')
             return False
+        pluginElements = pluginElem.findall('setting')
+        for elem in pluginElements:
+            pluginElem.remove(elem)
         # add plugins to settings
-        for pluginID in data:
-            plugin = data[pluginID]
+        for pluginID in sorted(pluginData):
+            plugin = pluginData[pluginID]
+            subEl = ET.SubElement(pluginElem,'setting', {'type': 'lsep', 'label':plugin['name']})
+            subEl.tail = '\n\t'
             attrib = {'default': 'false', 'type': 'bool'}
             attrib['id'] = 'plugin_%s' % pluginID
             attrib['label'] = plugin['name']
-            newPlugin = ET.Element()
-            ET.SubElement(pluginElem, 'setting', attrib)
-        tree.write(self.settingsFile)
-
-    def __delPluginsFromSettings(self, pluginIDs):
-        '''
-        pluginIDs (list): containing plugin-IDs
-        '''
-        import xml.etree.ElementTree as ET
-        tree = ET.parse(self.settingsFile)
-        #find Element for plugin Settings
-        pluginElem = False
-        for elem in tree.findall('category'):
-            if elem.attrib['label']=='30022':
-                pluginElem = elem
-                break
-        if not pluginElem:
-            logger.info('pluginElement not found')
-            return False
-        # delete plugins from settings
-        for elem in pluginElem.findall('setting'):
-            if 'id' in elem.attrib :
-                if elem.attrib['id'].replace('plugin_','') in pluginIDs:
-                    pluginElem.remove(elem)
+            subEl = ET.SubElement(pluginElem, 'setting', attrib)
+            subEl.tail = '\n\t'
+            if 'settings' in plugin:
+                customSettings = []
+                try:
+                    customSettings = ET.XML(xmlString % plugin['settings']).findall('setting')
+                except:
+                    logger.info('Parsing of custom settings for % failed.' % plugin['name'])
+                for setting in customSettings:
+                    setting.tail = '\n\t'
+                    pluginElem.append(setting)
+        pluginElements = pluginElem.findall('setting')[-1].tail = '\n'
+        try:
+            ET.dump(pluginElem)
+        except:
+            logger.info('Settings update failed')
+            return
         tree.write(self.settingsFile)
 
     def __getFileNamesFromFolder(self, sFolder):
@@ -146,16 +140,20 @@ class cPluginHandler:
                 aNameList.append(sItemName)
         return aNameList
 
-    def __importPlugin(self, fileName):
+    def __getPluginData(self, fileName):
         pluginData = {}
         try:
             plugin = __import__(fileName, globals(), locals())
-            pluginData['name'] = plugin.SITE_NAME                       
+            pluginData['name'] = plugin.SITE_NAME
         except Exception, e:
             logger.error("Can't import plugin: %s :%s" % (fileName, e))
             return False
         try:
             pluginData['icon'] = plugin.SITE_ICON
         except:
-            pluginData['icon'] = ''
+            pass
+        try:
+            pluginData['settings'] = plugin.SITE_SETTINGS
+        except:
+            pass
         return pluginData

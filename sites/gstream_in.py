@@ -12,6 +12,8 @@ import hashlib
 SITE_IDENTIFIER = 'gstream_in'
 SITE_NAME = 'G-Stream'
 SITE_ICON = 'gstream.png'
+SITE_SETTINGS ='<setting default="" id="gstream_in-username" label="Benutzername" type="text"/>+\
+                <setting default="" id="gstream_in-password" label="Passwort" type="text" option="hidden"/>'
 
 URL_MAIN = 'http://gstream.to'
 URL_LOGIN = URL_MAIN + '/login.php'

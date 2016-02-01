@@ -57,7 +57,7 @@ def updateMeta(params):
     imdbID = params.getValue('imdbID')
     name = str(params.getValue('title'))
     year = params.getValue('year')
-    print "MedienType: "+mediaType
+    logger.info("MediaType: "+mediaType)
     if (mediaType == 'movie' or mediaType == 'tvshow') :
         # show meta search input
         oGui = cGui()
@@ -85,7 +85,8 @@ def updateMeta(params):
             if mediaType == 'movie':
                 items.append(str(item['title'].encode('utf-8'))+' ('+str(item['year'])+')')                   
             elif mediaType == 'tvshow':
-                items.append(str(item[1]))
+                if len(item)>2:items.append(str(item[1])+' ('+str(item[3])+')')
+                else: items.append(str(item[1]))
             else:
                 return
         index = dialog.select('Film/Serie wählen', items)
@@ -112,7 +113,6 @@ def updateMeta(params):
             meta.update_season(name, imdbID, season)
         else:
             meta.update_meta(mediaType, name, imdbID, new_imdb_id=str(item[2]), new_tmdb_id=str(item[0]), year=year) 
-    #print params.getAllParameters()
     xbmc.executebuiltin("XBMC.Container.Refresh")
     return
 
@@ -135,6 +135,9 @@ def parseUrl():
     elif sFunction == 'updateMeta':
         updateMeta(params) 
         return
+    elif sFunction == 'searchAlter':
+        searchAlter(params) 
+        return
   else:
     sFunction = 'load'
 
@@ -148,9 +151,10 @@ def parseUrl():
         url = False
         playMode = params.getValue('playMode')
         isHoster = params.getValue('isHoster')
-        if isHoster == 'true':
-            url = params.getValue('url')    
-        if cConfig().getSetting('autoPlay')=='true' and playMode != 'jd' and playMode != 'pyload':
+        url = params.getValue('url')
+        manual = params.exist('manual')  
+           
+        if cConfig().getSetting('autoPlay')=='true' and playMode != 'jd' and playMode != 'pyload' and not manual:
             cHosterGui().streamAuto(playMode, sSiteName, sFunction)
         else:        
             cHosterGui().stream(playMode, sSiteName, sFunction, url)
@@ -165,7 +169,7 @@ def parseUrl():
         # If global search is called  
         elif sSiteName == 'globalSearch':
             searchGlobal()
-            return  
+            return    
         elif sSiteName == 'favGui':
             showFavGui(sFunction)
             return 
@@ -202,7 +206,7 @@ def showMainMenu(sFunction):
     aPlugins = oPluginHandler.getAvailablePlugins()
     if len(aPlugins) <= 0:
       logger.info("No Plugins found")
-      # Open the settings dialog to choose a plugin that could be enable
+      # Open the settings dialog to choose a plugin that could be enabled
       oGui.openSettings()
       oGui.updateDirectory()
     else:
@@ -273,34 +277,78 @@ def showHosterGui(sFunction):
     #return True
 
 def searchGlobal():
+    import threading
     oGui = cGui()
     sSearchText = oGui.showKeyBoard()
     if (sSearchText != False and sSearchText != ''):
         aPlugins = []
         aPlugins = cPluginHandler().getAvailablePlugins()
-        oGui.dialog = xbmcgui.DialogProgress()
-        oGui.dialog.create('xStream',"Searching...")
+        dialog = xbmcgui.DialogProgress()
+        dialog.create('xStream',"Searching...")
         numPlugins = len(aPlugins)
         count = 0
+        threads = []
         for pluginEntry in aPlugins:
-            pluginName = str(pluginEntry['name'])
-            pluginSiteName = pluginEntry['id']
-            oGui.dialog.update(count*100/numPlugins,'Searching: '+pluginName+'...')
+            dialog.update(count*100/numPlugins,'Searching: '+str(pluginEntry['name'])+'...')
             count += 1
-            logger.info('Searching for "'+sSearchText+'" at '+pluginName)
-            try:
-                plugin = __import__(pluginSiteName, globals(), locals())
-                function = getattr(plugin, '_search')
-                oGuiElement = cGuiElement('[B][COLOR yellow]----'+pluginName+'----[/COLOR][/B]',pluginSiteName,'spacer')
-                if len(pluginEntry)>2:
-                    oGuiElement.setThumbnail(pluginEntry['icon'])
-                oGui.addFolder(oGuiElement)
-                function(oGui, sSearchText)
-            except:
-                logger.info(pluginName+': search failed')
-                import traceback
-                print traceback.format_exc()
-        oGui.dialog.close()
+            logger.info('Searching for %s at %s' % (sSearchText, pluginEntry['id']))
+            t = threading.Thread(target=_pluginSearch, args=(pluginEntry,sSearchText,oGui))
+            threads += [t]
+            t.start()
+        for t in threads: 
+            t.join()
+        dialog.close()
         oGui.setView()
         oGui.setEndOfDirectory()
     return True
+
+def searchAlter(params):
+    searchTitle = params.getValue('searchTitle')
+    searchImdbId = params.getValue('searchImdbID')
+    searchYear = params.getValue('searchYear')
+    import threading
+    oGui = cGui()
+    aPlugins = []
+    aPlugins = cPluginHandler().getAvailablePlugins()
+    dialog = xbmcgui.DialogProgress()
+    dialog.create('xStream',"Searching...")
+    numPlugins = len(aPlugins)
+    count = 0
+    threads = []
+    for pluginEntry in aPlugins:
+        dialog.update(count*100/numPlugins,'Searching: '+str(pluginEntry['name'])+'...')
+        count += 1
+        logger.info('Searching for ' + searchTitle + pluginEntry['id'].encode('utf-8'))
+        t = threading.Thread(target=_pluginSearch, args=(pluginEntry,searchTitle, oGui))
+        threads += [t]
+        t.start()
+    for t in threads: 
+        t.join()
+    #check results, put this to the threaded part, too
+    dialog.close()
+    filteredResults = []
+    for result in oGui.searchResults:
+        print 'Site: %s Titel: %s' % (result.getSiteName(), result.getTitle())
+        if not searchTitle in result.getTitle(): continue
+        if result.getYear() and result.getYear() != year: continue
+        if result.getItemProperties().get('imdbID',False) and result.getItemProperties().get('imdbID',False) != searchImdbId: continue
+        filteredResults.append(result)
+
+    for result in filteredResults:
+        print 'Site: %s Titel: %s' % (result.getSiteName(), result.getTitle())
+
+    oGui.setView()
+    oGui.setEndOfDirectory()
+    #xbmc.executebuiltin('Container.Update')
+    return True
+
+
+def _pluginSearch(pluginEntry, sSearchText, oGui):
+    try:
+        plugin = __import__(pluginEntry['id'], globals(), locals())
+        function = getattr(plugin, '_search')
+        function(oGui, sSearchText)
+    except:
+        logger.info(pluginEntry['name']+': search failed')
+        import traceback
+        print traceback.format_exc()

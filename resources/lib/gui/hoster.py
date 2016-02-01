@@ -25,7 +25,7 @@ class cHosterGui:
         self.maxHoster = int(cConfig().getSetting('maxHoster'))
         self.dialog = False
 
-
+    # TODO: unify parts of play, download etc.
     def play(self, siteResult=False):
         import urlresolver
         oGui = cGui()
@@ -64,7 +64,10 @@ class cHosterGui:
             msg = False
         if sLink != False and not msg:
             logger.info('file link: ' + str(sLink))
-            listItem = xbmcgui.ListItem(path=sLink + self.userAgent)
+            if "User-Agent=" not in sLink:
+                listItem = xbmcgui.ListItem(path=sLink + self.userAgent)
+            else:
+                listItem = xbmcgui.ListItem(path=sLink)
             info = {}
             info['Title'] = sFileName
             if sThumbnail:
@@ -78,14 +81,14 @@ class cHosterGui:
                try:
                    self.dialog.close()
                except:
-                   pass       
+                   pass      
             listItem.setInfo(type="Video", infoLabels=info)
             listItem.setProperty('IsPlayable', 'true')
 
             pluginHandle = oGui.pluginHandle
             xbmcplugin.setResolvedUrl(pluginHandle, True, listItem)
-            oPlayer.startPlayer() # autostream loop is still active while playing
-            return True #Necessary for autoStream
+            res = oPlayer.startPlayer() #Necessary for autoStream
+            return res
         else:
             if not msg:
                msg = 'Stream nicht mehr verfügbar oder Link fehlerhaft'
@@ -454,6 +457,7 @@ class cHosterGui:
                 percent = count*100/total
                 try:
                     logger.info('try hoster %s' % hoster['name'])
+                    self.dialog.create('xStream','try hosters...')
                     self.dialog.update(percent,'try hoster %s' % hoster['name'])
                     # get stream links
                     function = getattr(plugin, functionName)
@@ -490,7 +494,6 @@ class cHosterGui:
                     self.addToPlaylist(partList[i])
             except:
                 return False
-                raise
         logger.info('autoEnqueue successful')
         return True
 
@@ -500,4 +503,3 @@ class Hoster:
     def __init__(self, name, link):
         self.name = name
         self.link = link
-            
